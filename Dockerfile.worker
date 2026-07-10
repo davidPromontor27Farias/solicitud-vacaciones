@@ -1,0 +1,23 @@
+# Imagen del servicio "worker": procesa la cola de correos (BullMQ) en segundo
+# plano. Comparte el mismo código del backend, pero corre un proceso distinto
+# y no expone ningún puerto público.
+
+FROM node:24-slim AS build
+WORKDIR /app
+RUN apt-get update -y && apt-get install -y python3 make g++ openssl && rm -rf /var/lib/apt/lists/*
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci
+COPY backend/ ./
+RUN npm run build
+
+FROM node:24-slim
+WORKDIR /app
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+ENV NODE_ENV=production
+
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/package.json ./package.json
+
+CMD ["node", "dist/interfaces/jobs/emailWorker.js"]

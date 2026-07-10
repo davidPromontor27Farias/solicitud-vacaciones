@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EstatusSolicitud {
+  pendiente
+  aprobada
+  revocada
+  rechazada
+}
+
+enum TipoNotificacion {
+  activacion_cuenta
+  restablecer_password
+  solicitud_creada
+  solicitud_rechazada
+  aprobacion_empleado
+  aprobacion_nomina
+  aprobacion_jefe_matricial
+  revocacion
+}
+
+enum EstatusEnvio {
+  pendiente
+  enviado
+  fallido
+}
+
+model Empleado {
+  id                             String    @id @default(uuid())
+  numeroEmpleado                 String    @unique @map("numero_empleado")
+  nombre                         String
+  sociedad                       String?
+  puesto                         String?
+  departamento                   String?
+  correoPersonal                 String?   @map("correo_personal")
+  passwordHash                   String?   @map("password_hash")
+  primerAcceso                   Boolean   @default(true) @map("primer_acceso")
+  intentosFallidos               Int       @default(0) @map("intentos_fallidos")
+  bloqueadoHasta                 DateTime? @map("bloqueado_hasta")
+  recibeNotificacionesMatricial  Boolean   @default(true) @map("recibe_notificaciones_matricial")
+
+  jefeDirectoId          String?    @map("jefe_directo_id")
+  jefeDirecto             Empleado?  @relation("JefeDirecto", fields: [jefeDirectoId], references: [id])
+  subordinadosDirectos     Empleado[] @relation("JefeDirecto")
+
+  jefeMatricialId        String?    @map("jefe_matricial_id")
+  jefeMatricial            Empleado?  @relation("JefeMatricial", fields: [jefeMatricialId], references: [id])
+  subordinadosMatriciales  Empleado[] @relation("JefeMatricial")
+
+  saldosVacaciones         SaldoVacaciones[]
+  solicitudes              SolicitudVacaciones[] @relation("SolicitudesEmpleado")
+  solicitudesRevocadas      SolicitudVacaciones[] @relation("RevocadoPor")
+  tokensActivacion         TokenActivacion[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([jefeDirectoId])
+  @@index([jefeMatricialId])
+  @@map("empleados")
+}
+
+model SaldoVacaciones {
+  id                String   @id @default(uuid())
+  empleadoId        String   @map("empleado_id")
+  empleado          Empleado @relation(fields: [empleadoId], references: [id])
+  diasPorLey        Int      @map("dias_por_ley")
+  diasDisfrutados   Int      @default(0) @map("dias_disfrutados")
+  diasPendientes    Int      @map("dias_pendientes")
+  inicioValidez     DateTime @map("inicio_validez") @db.Date
+  fechaVencimiento  DateTime @map("fecha_vencimiento") @db.Date
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([empleadoId, inicioValidez])
+  @@index([empleadoId])
+  @@map("saldos_vacaciones")
+}
+
+model SolicitudVacaciones {
+  id               String            @id @default(uuid())
+  empleadoId       String            @map("empleado_id")
+  empleado         Empleado          @relation("SolicitudesEmpleado", fields: [empleadoId], references: [id])
+  estatus          EstatusSolicitud  @default(pendiente)
+  backupNombre     String?           @map("backup_nombre")
+  motivoRevocacion String?           @map("motivo_revocacion")
+  revocadoPorId    String?           @map("revocado_por_id")
+  revocadoPor      Empleado?         @relation("RevocadoPor", fields: [revocadoPorId], references: [id])
+
+  diasSolicitados  DiaSolicitado[]
+  notificaciones   NotificacionEmail[]
+
+  createdAt  DateTime  @default(now()) @map("creado_at")
+  resueltoAt DateTime? @map("resuelto_at")
+
+  @@index([empleadoId])
+  @@index([estatus])
+  @@map("solicitudes_vacaciones")
+}
+
+model DiaSolicitado {
+  id          String              @id @default(uuid())
+  solicitudId String              @map("solicitud_id")
+  solicitud   SolicitudVacaciones @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  fecha       DateTime            @db.Date
+
+  @@unique([solicitudId, fecha])
+  @@index([fecha])
+  @@map("dias_solicitados")
+}
+
+model TokenActivacion {
+  id          String    @id @default(uuid())
+  empleadoId  String    @map("empleado_id")
+  empleado    Empleado  @relation(fields: [empleadoId], references: [id])
+  token       String    @unique
+  expiraAt    DateTime  @map("expira_at")
+  usadoAt     DateTime? @map("usado_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("tokens_activacion")
+}
+
+model NotificacionEmail {
+  id             String                @id @default(uuid())
+  solicitudId    String?               @map("solicitud_id")
+  solicitud      SolicitudVacaciones?  @relation(fields: [solicitudId], references: [id])
+  tipo           TipoNotificacion
+  destinatario   String
+  estatusEnvio   EstatusEnvio          @default(pendiente) @map("estatus_envio")
+  intentos       Int                   @default(0)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  enviadoAt DateTime? @map("enviado_at")
+
+  @@index([solicitudId])
+  @@map("notificaciones_email")
+}

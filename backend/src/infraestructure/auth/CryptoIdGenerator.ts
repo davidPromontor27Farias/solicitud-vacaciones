@@ -1,0 +1,14 @@
+import { randomBytes, randomInt } from "node:crypto";
+import { IdGenerator } from "../../application/ports/IdGenerator";
+
+
+
+export class CryptoIdGenerator implements IdGenerator{
+    generar(): string {
+        return randomBytes(32).toString('hex');
+    }
+
+    generarCodigoActivacion(): string {
+        return randomInt(0, 1_000_000).toString().padStart(6, '0');
+    }
+}

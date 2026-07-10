@@ -1,0 +1,25 @@
+import { SolicitudVacaciones } from "../entities/SolicitudVacaciones";
+
+
+export interface FiltroHistorial {
+
+    empleadoId: string;
+    pagina: number;
+    porPagina: number;
+}
+
+export interface ResultadoPaginado<T>{
+    datos: T[];
+    total: number;
+    pagina: number;
+    porPagina: number;
+}
+
+
+export interface SolicitudVacacionesRepository{
+    crear(solicitud: SolicitudVacaciones): Promise<void>;
+    buscarPorId(id: string): Promise<SolicitudVacaciones | null>;
+    actualizar(solicitud: SolicitudVacaciones): Promise<void>;
+    listarPorEmpleado(filtro: FiltroHistorial): Promise<ResultadoPaginado <SolicitudVacaciones>>;
+    listarPorEquipo(jefeDirectoId: string, desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>;
+}
