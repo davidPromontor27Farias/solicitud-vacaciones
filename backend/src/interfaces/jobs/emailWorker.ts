@@ -4,7 +4,7 @@ import { Worker, Job } from "bullmq";
 import { EMAIL_QUEUE_NAME } from "../../infraestructure/email/EmailQueue";
 import { redis } from "../../infraestructure/cache/redisClient";
 import { logger } from "../../shared/logger";
-import { mailer } from '../../infraestructure/email/mailer';
+import { enviarCorreo } from '../../infraestructure/email/mailer';
 import { construirCorreo } from '../../infraestructure/email/plantillas';
 
 
@@ -24,7 +24,7 @@ export const emailWorker = new Worker<EmailJobData>(
         const { subject, text, html } = construirCorreo(tipo, datos);
 
         try {
-            await mailer.sendMail({ from: process.env.SMTP_FROM, to: destinatario, subject, text, html });
+            await enviarCorreo({ from: process.env.EMAIL_FROM!, to: destinatario, subject, text, html });
             await prisma.notificacionEmail.update({
                 where: { id: notificacionId },
                 data: { estatusEnvio: 'enviado', enviadoAt: new Date(), intentos: { increment: 1 } },
