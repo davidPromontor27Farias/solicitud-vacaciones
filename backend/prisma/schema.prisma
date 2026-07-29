@@ -39,6 +39,7 @@ model Empleado {
   puesto                         String?
   departamento                   String?
   correoPersonal                 String?   @map("correo_personal")
+  backupNombre                   String?   @map("backup_nombre")
   passwordHash                   String?   @map("password_hash")
   primerAcceso                   Boolean   @default(true) @map("primer_acceso")
   intentosFallidos               Int       @default(0) @map("intentos_fallidos")
@@ -75,7 +76,8 @@ model SaldoVacaciones {
   diasPendientes    Int      @map("dias_pendientes")
   inicioValidez     DateTime @map("inicio_validez") @db.Date
   fechaVencimiento  DateTime @map("fecha_vencimiento") @db.Date
-
+  finValidez          DateTime @map("fin_validez") @db.Date
+  fechaLimiteDisfrute DateTime @map("fecha_limite_disfrute") @db.Date
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([empleadoId, inicioValidez])
@@ -90,6 +92,7 @@ model SolicitudVacaciones {
   estatus          EstatusSolicitud  @default(pendiente)
   backupNombre     String?           @map("backup_nombre")
   motivoRevocacion String?           @map("motivo_revocacion")
+  motivoRechazo String? @map("motivo_rechazo")
   revocadoPorId    String?           @map("revocado_por_id")
   revocadoPor      Empleado?         @relation("RevocadoPor", fields: [revocadoPorId], references: [id])
 
@@ -142,4 +145,41 @@ model NotificacionEmail {
 
   @@index([solicitudId])
   @@map("notificaciones_email")
+}
+
+
+enum RolAdmin {
+  lectura
+  nominas
+}
+
+model Admin {
+  id           String   @id @default(uuid())
+  usuario      String   @unique
+  nombre       String
+  passwordHash String   @map("password_hash")
+  rol          RolAdmin @default(lectura)
+
+  importaciones ImportacionNomina[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("admins")
+}
+
+model ImportacionNomina {
+  id                    String   @id @default(uuid())
+  adminId               String   @map("admin_id")
+  admin                 Admin    @relation(fields: [adminId], references: [id])
+  nombreArchivo         String   @map("nombre_archivo")
+  filasLeidas           Int      @map("filas_leidas")
+  empleadosCreados      Int      @map("empleados_creados")
+  empleadosActualizados Int      @map("empleados_actualizados")
+  periodosCreados       Int      @map("periodos_creados")
+  periodosActualizados  Int      @map("periodos_actualizados")
+  jefesNoResueltos      String[] @map("jefes_no_resueltos")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  @@map("importaciones_nomina")
 }

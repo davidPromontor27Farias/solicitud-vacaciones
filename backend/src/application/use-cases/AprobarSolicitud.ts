@@ -1,3 +1,4 @@
+import { EnlaceRevisionGenerator } from "../ports/EnlaceRevisionGenerator"
 import { Empleado } from "../../domain/entities/Empleado";
 import { EmpleadoRepository } from "../../domain/repositories/EmpleadoRepository";
 import { SaldoVacacionesRepository } from "../../domain/repositories/SaldoVacacionesRepository";
@@ -9,7 +10,7 @@ import { NotFoundError, UnauthorizedError, ValidationError } from "../../shared/
 export interface AprobarSolicitudInput {
     solicitudId: string;
     aprobadorId: string;
-    backupNombre: string;
+
 }
 
 export class AprobarSolicitud {
@@ -18,6 +19,7 @@ export class AprobarSolicitud {
         private saldoRepo: SaldoVacacionesRepository,
         private solicitudRepo: SolicitudVacacionesRepository,
         private emailNotifier: EmailNotifier,
+        private enlaceGenerator: EnlaceRevisionGenerator,
     ) {}
 
     async ejecutar(input: AprobarSolicitudInput): Promise<SolicitudVacaciones> {
@@ -35,10 +37,16 @@ export class AprobarSolicitud {
             throw new UnauthorizedError('No tienes permiso para aprobar esta solicitud');
         }
 
-        const primerDia = solicitud.dias[0];
+        const dias = solicitud.dias;
         const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id);
+
+        const diaSinSaldoVigente = dias.find((dia) => !saldos.some((s) => s.estaVigente(dia)));
+        if (diaSinSaldoVigente) {
+            throw new ValidationError(`El empleado ya no cuenta con saldo vigente para el ${diaSinSaldoVigente.toISOString().slice(0, 10)}`);
+        }
+
         const vigentes = saldos
-            .filter((s) => s.estaVigente(primerDia))
+            .filter((s) => dias.some((dia) => s.estaVigente(dia)))
             .sort((a, b) => a.fechaVencimiento.getTime() - b.fechaVencimiento.getTime());
 
         const totalDisponible = vigentes.reduce((acc, s) => acc + s.diasPendientes, 0);
@@ -58,7 +66,7 @@ export class AprobarSolicitud {
         }
 
         try {
-            solicitud.aprobar(input.backupNombre);
+            solicitud.aprobar();
         } catch (error) {
             throw new ValidationError(error instanceof Error ? error.message : 'No se pudo aprobar la solicitud');
         }
@@ -82,11 +90,17 @@ export class AprobarSolicitud {
         if (empleado.recibeNotificacionesMatricial && empleado.jefeMatricialId) {
             const jefeMatricial = await this.empleadoRepo.buscarPorId(empleado.jefeMatricialId);
             if (jefeMatricial?.correoPersonal) {
+
+                const enlaceToken = this.enlaceGenerator.generar({
+                    solicitudId: solicitud.id,
+                    jefeId: empleado.jefeMatricialId
+                })
+
                 await this.emailNotifier.encolar({
                     tipo: 'aprobacion_jefe_matricial',
                     destinatario: jefeMatricial.correoPersonal,
                     solicitudId: solicitud.id,
-                    datos: { empleado: empleado.nombre, dias: String(solicitud.cantidadDias) },
+                    datos: { empleado: empleado.nombre, dias: String(solicitud.cantidadDias), enlaceToken },
                 });
             }
         }

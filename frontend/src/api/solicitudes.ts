@@ -16,10 +16,10 @@ export interface HistorialResultado {
     porPagina: number;
 }
 
-export function crearSolicitud(dias: string[]): Promise<SolicitudResumen> {
+export function crearSolicitud(dias: string[],  backupNombre: string): Promise<SolicitudResumen> {
     return apiFetch('/solicitudes', {
         method: 'POST',
-        body: JSON.stringify({ dias }),
+        body: JSON.stringify({ dias, backupNombre }),
     });
 }
 
@@ -43,15 +43,17 @@ export function obtenerCalendarioMiEquipo(): Promise<SolicitudEquipo[]> {
     return apiFetch('/solicitudes/mi-equipo');
 }
 
-export function aprobarSolicitud(id: string, backupNombre: string): Promise<SolicitudResumen> {
+export function aprobarSolicitud(id: string): Promise<SolicitudResumen> {
     return apiFetch(`/solicitudes/${id}/aprobar`, {
-        method: 'POST',
-        body: JSON.stringify({ backupNombre }),
+        method: 'POST'
     });
 }
 
-export function rechazarSolicitud(id: string): Promise<SolicitudResumen> {
-    return apiFetch(`/solicitudes/${id}/rechazar`, { method: 'POST' });
+export function rechazarSolicitud(id: string, motivo: string): Promise<SolicitudResumen> {
+    return apiFetch(`/solicitudes/${id}/rechazar`, {
+        method: 'POST',
+        body: JSON.stringify({ motivo }),
+    });
 }
 
 export function revocarSolicitud(id: string, motivo: string): Promise<SolicitudResumen> {

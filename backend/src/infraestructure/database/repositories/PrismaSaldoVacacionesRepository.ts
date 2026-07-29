@@ -10,6 +10,8 @@ function toDomain(row: {
     diasPendientes: number;
     inicioValidez: Date;
     fechaVencimiento: Date;
+    finValidez: Date;
+    fechaLimiteDisfrute: Date;
 }): SaldoVacaciones {
     return new SaldoVacaciones({
         id: row.id,
@@ -19,6 +21,8 @@ function toDomain(row: {
         diasPendientes: row.diasPendientes,
         inicioValidez: row.inicioValidez,
         fechaVencimiento: row.fechaVencimiento,
+        finValidez: row.finValidez,
+        fechaLimiteDisfrute: row.fechaLimiteDisfrute,
     });
 }
 
@@ -27,6 +31,14 @@ export class PrismaSaldoVacacionesRepository implements SaldoVacacionesRepositor
 
     async listarPorEmpleadoId(empleadoId: string): Promise<SaldoVacaciones[]> {
         const rows = await this.prisma.saldoVacaciones.findMany({ where: { empleadoId } });
+        return rows.map(toDomain);
+    }
+
+    async listarConDiasPendientes(): Promise<SaldoVacaciones[]> {
+        const rows = await this.prisma.saldoVacaciones.findMany({
+            where: {diasPendientes: {gt: 0}},
+            orderBy: {fechaVencimiento: 'asc'}
+        });
         return rows.map(toDomain);
     }
 
@@ -41,6 +53,8 @@ export class PrismaSaldoVacacionesRepository implements SaldoVacacionesRepositor
                 diasPendientes: props.diasPendientes,
                 inicioValidez: props.inicioValidez,
                 fechaVencimiento: props.fechaVencimiento,
+                finValidez: props.finValidez,
+                fechaLimiteDisfrute: props.fechaLimiteDisfrute,
             },
         });
     }
@@ -50,8 +64,10 @@ export class PrismaSaldoVacacionesRepository implements SaldoVacacionesRepositor
         await this.prisma.saldoVacaciones.update({
             where: { id: props.id },
             data: {
+                diasPorLey: props.diasPorLey,
                 diasDisfrutados: props.diasDisfrutados,
                 diasPendientes: props.diasPendientes,
+                fechaVencimiento: props.fechaVencimiento,
             },
         });
     }

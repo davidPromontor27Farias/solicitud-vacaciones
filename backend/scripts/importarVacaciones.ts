@@ -3,7 +3,7 @@ import * as xlsx from 'xlsx';
 import { PrismaClient } from '@prisma/client';
 
 const RUTA_EXCEL = process.argv[2] ?? 'C:\\Users\\sistemas\\Downloads\\BaseVacaciones.xlsx';
-const HOJA = 'Vac 2026';
+const HOJA = 'Vacaciones';
 
 const prisma = new PrismaClient();
 
@@ -16,13 +16,14 @@ interface FilaExcel {
     Departamento: string | null;
     'Inicio de validez': Date;
     'Fin de validez': Date;
-    'Dias por Ley': number;
-    'Ya disfrutadas': number;
-    'Dias Pendientes': number;
+    'Dias por ley': number;
+    'Ya disfrutados': number;
+    'Dias pendientes': number;
     Vencen: Date;
-    'Jefe Inmediato': string | null;
-    'Jefe Matricial': string | null;
-    Correo_personal: string | null;
+    'Fecha Limite para disfrutar': Date;
+    'JEFE INMEDIATO': string | null;
+    'JEFE MATRICIAL': string | null;
+    'BACK UP': string | null;
 }
 
 async function main() {
@@ -58,7 +59,7 @@ async function main() {
                 sociedad: base.Sociedad,
                 puesto: base.Puesto,
                 departamento: base.Departamento,
-                correoPersonal: base.Correo_personal,
+                backupNombre: base['BACK UP'] ?? null,
                 primerAcceso: true,
                 intentosFallidos: 0,
                 recibeNotificacionesMatricial: true,
@@ -68,7 +69,7 @@ async function main() {
                 sociedad: base.Sociedad,
                 puesto: base.Puesto,
                 departamento: base.Departamento,
-                ...(base.Correo_personal ? { correoPersonal: base.Correo_personal } : {}),
+                backupNombre: base['BACK UP'] ?? null,
             },
         });
 
@@ -87,11 +88,11 @@ async function main() {
     for (const [no, periodos] of porEmpleado) {
         const base = periodos[0];
         const numeroEmpleado = String(no);
-        const jefeDirectoId = base['Jefe Inmediato'] ? idPorNombre.get(base['Jefe Inmediato']) ?? null : null;
-        const jefeMatricialId = base['Jefe Matricial'] ? idPorNombre.get(base['Jefe Matricial']) ?? null : null;
+        const jefeDirectoId = base['JEFE INMEDIATO'] ? idPorNombre.get(base['JEFE INMEDIATO']) ?? null : null;
+        const jefeMatricialId = base['JEFE MATRICIAL'] ? idPorNombre.get(base['JEFE MATRICIAL']) ?? null : null;
 
-        if (base['Jefe Inmediato'] && !jefeDirectoId) jefesNoEncontrados.add(base['Jefe Inmediato']);
-        if (base['Jefe Matricial'] && !jefeMatricialId) jefesNoEncontrados.add(base['Jefe Matricial']);
+        if (base['JEFE INMEDIATO'] && !jefeDirectoId) jefesNoEncontrados.add(base['JEFE INMEDIATO']);
+        if (base['JEFE MATRICIAL'] && !jefeMatricialId) jefesNoEncontrados.add(base['JEFE MATRICIAL']);
         if (jefeDirectoId || jefeMatricialId) jefesResueltos++;
 
         await prisma.empleado.update({
@@ -120,17 +121,21 @@ async function main() {
                 },
                 create: {
                     empleadoId: empleado.id,
-                    diasPorLey: periodo['Dias por Ley'],
-                    diasDisfrutados: periodo['Ya disfrutadas'],
-                    diasPendientes: periodo['Dias Pendientes'],
+                    diasPorLey: periodo['Dias por ley'],
+                    diasDisfrutados: periodo['Ya disfrutados'],
+                    diasPendientes: periodo['Dias pendientes'],
                     inicioValidez: periodo['Inicio de validez'],
+                    finValidez: periodo['Fin de validez'],
                     fechaVencimiento: periodo.Vencen,
+                    fechaLimiteDisfrute: periodo['Fecha Limite para disfrutar'],
                 },
                 update: {
-                    diasPorLey: periodo['Dias por Ley'],
-                    diasDisfrutados: periodo['Ya disfrutadas'],
-                    diasPendientes: periodo['Dias Pendientes'],
+                    diasPorLey: periodo['Dias por ley'],
+                    diasDisfrutados: periodo['Ya disfrutados'],
+                    diasPendientes: periodo['Dias pendientes'],
+                    finValidez: periodo['Fin de validez'],
                     fechaVencimiento: periodo.Vencen,
+                    fechaLimiteDisfrute: periodo['Fecha Limite para disfrutar'],
                 },
             });
         }

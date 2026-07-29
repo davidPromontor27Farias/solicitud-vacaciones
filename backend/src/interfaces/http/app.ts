@@ -1,12 +1,13 @@
 import path from 'node:path';
 import { existsSync } from 'node:fs';
+import helmet from '@fastify/helmet';
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import { ZodError } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { logger } from '../../shared/logger';
 import { AppError } from '../../shared/errors';
 import { registerAuthRoutes } from './routes/auth.routes';
@@ -21,13 +22,30 @@ import { registerEmpleadosRoutes } from './routes/empleados.routes';
 import { registerRevisionRoutes } from './routes/revision.routes';
 import { PrismaSaldoVacacionesRepository } from '../../infraestructure/database/repositories/PrismaSaldoVacacionesRepository';
 import { PrismaSolicitudVacacionesRepository } from '../../infraestructure/database/repositories/PrismaSolicitudVacacionesRepository';
+import { PrismaAdminRepository } from '../../infraestructure/database/repositories/PrismaAdminRepository';
+import { registerAdminRoutes } from './routes/admin.routes';
 
 export function buildApp(prisma: PrismaClient): FastifyInstance {
     const app = Fastify({ logger: false, maxParamLength: 1000 });
 
-    app.register(cors, { origin: true });
-    app.register(jwt, { secret: process.env.JWT_SECRET! });
-    app.register(rateLimit, { max: 100, timeWindow: '1 minute' });
+    const origenesPermitidos = [process.env.APP_URL, 'http://localhost:5173'].filter(
+        (o): o is string => Boolean(o),
+    )
+
+    app.register(helmet, {contentSecurityPolicy: false});
+    app.register(cors, {
+        origin(origin, callback){
+            const esProduccion = process.env.NODE_ENV === 'production';
+            if(!origin || !esProduccion || origenesPermitidos.includes(origin)){
+                callback(null, true);
+                return;
+            }
+            callback(new Error('origen no permitido'), false);
+        }
+    })
+
+    app.register(jwt, {secret: process.env.JWT_SECRET!});
+    app.register(rateLimit, {max: 100, timeWindow: '1 minute'});
 
     app.setErrorHandler((error, _request, reply) => {
         if (error instanceof AppError) {
@@ -45,6 +63,7 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
     app.get('/health', async () => ({ status: 'ok' }));
 
     const empleadoRepo = new PrismaEmpleadoRepository(prisma);
+    const adminRepo = new PrismaAdminRepository(prisma);
     const saldoRepo = new PrismaSaldoVacacionesRepository(prisma);
     const solicitudRepo = new PrismaSolicitudVacacionesRepository(prisma);
     const tokenRepo = new PrismaTokenActivacionRepository(prisma);
@@ -58,6 +77,7 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
         registerSolicitudesRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, idGenerator, enlaceGenerator });
         registerEmpleadosRoutes(api, { empleadoRepo, saldoRepo });
         registerRevisionRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, enlaceGenerator });
+        registerAdminRoutes(api, {adminRepo, empleadoRepo, saldoRepo, passwordHasher})
     }, { prefix: '/api' });
 
     // En producción, la imagen de Docker copia el build del frontend a ./public

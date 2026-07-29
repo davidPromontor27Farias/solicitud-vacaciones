@@ -41,31 +41,41 @@ export function registerAuthRoutes(app: FastifyInstance, deps: AuthDeps): void {
         deps.idGenerator,
     );
 
-    app.post('/auth/verificar-numero-empleado', async (request, reply) => {
+    app.post('/auth/verificar-numero-empleado',{
+        config: {rateLimit: {max: 20, timeWindow: '1 minute'}}
+    },  async (request, reply) => {
         const body = verificarNumeroEmpleadoSchema.parse(request.body);
         const resultado = await verificarNumeroEmpleado.ejecutar(body.numeroEmpleado);
         reply.send(resultado);
     });
 
-    app.post('/auth/registrar-correo', async (request, reply) => {
+    app.post('/auth/registrar-correo', {
+        config: {rateLimit: {max: 5, timeWindow: '1 minute'}}
+    }, async (request, reply) => {
         const body = registrarCorreoSchema.parse(request.body);
         await registrarCorreo.ejecutar(body);
         reply.send({ ok: true });
     });
 
-    app.post('/auth/crear-password', async (request, reply) => {
+    app.post('/auth/crear-password', {
+        config: {rateLimit: {max: 10, timeWindow: '1 minute'}},
+    }, async (request, reply) => {
         const body = crearPasswordSchema.parse(request.body);
         await crearPassword.ejecutar(body);
         reply.send({ ok: true });
     });
 
-    app.post('/auth/solicitar-restablecimiento', async (request, reply) => {
+    app.post('/auth/solicitar-restablecimiento', {
+        config: {rateLimit: {max: 10, timeWindow: '1 minute'}}
+    }, async (request, reply) => {
         const body = verificarNumeroEmpleadoSchema.parse(request.body);
         await solicitarRestablecimiento.ejecutar({ numeroEmpleado: body.numeroEmpleado });
         reply.send({ ok: true });
     });
 
-    app.post('/auth/login', async (request, reply) => {
+    app.post('/auth/login', {
+        config: {rateLimit: {max: 10, timeWindow: '1 minute'}}
+    },  async (request, reply) => {
         const body = loginSchema.parse(request.body);
         const empleado = await iniciarSesion.ejecutar(body);
         const token = app.jwt.sign({ sub: empleado.id, numeroEmpleado: empleado.numeroEmpleado }, { expiresIn: '8h' });

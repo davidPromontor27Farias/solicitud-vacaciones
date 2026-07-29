@@ -31,7 +31,7 @@ export class RevocarSolicitud {
             throw new NotFoundError('Empleado no encontrado');
         }
 
-        if (empleado.jefeDirectoId !== input.revocadoPorId) {
+        if (empleado.jefeDirectoId !== input.revocadoPorId && empleado.jefeMatricialId !== input.revocadoPorId) {
             throw new UnauthorizedError('No tienes permiso para revocar esta solicitud');
         }
 
@@ -43,7 +43,7 @@ export class RevocarSolicitud {
         await this.solicitudRepo.actualizar(solicitud);
 
         await this.restituirSaldo(empleado, solicitud);
-        await this.notificar(empleado, solicitud);
+        await this.notificar(empleado, solicitud, input.revocadoPorId);
 
         return solicitud;
     }
@@ -66,7 +66,7 @@ export class RevocarSolicitud {
         await this.saldoRepo.guardar(destino);
     }
 
-    private async notificar(empleado: Empleado, solicitud: SolicitudVacaciones): Promise<void> {
+    private async notificar(empleado: Empleado, solicitud: SolicitudVacaciones, revocadoPorId: string): Promise<void> {
         if (empleado.correoPersonal) {
             await this.emailNotifier.encolar({
                 tipo: 'revocacion',
@@ -76,12 +76,15 @@ export class RevocarSolicitud {
             });
         }
 
-        if (empleado.recibeNotificacionesMatricial && empleado.jefeMatricialId) {
-            const jefeMatricial = await this.empleadoRepo.buscarPorId(empleado.jefeMatricialId);
-            if (jefeMatricial?.correoPersonal) {
+
+        const esDirectoQuienRevoco = revocadoPorId === empleado.jefeDirectoId;
+        const otroJefeId = esDirectoQuienRevoco ? empleado.jefeMatricialId : empleado.jefeDirectoId;
+        if (empleado.recibeNotificacionesMatricial && otroJefeId) {
+            const otroJefe = await this.empleadoRepo.buscarPorId(otroJefeId);
+            if (otroJefe?.correoPersonal) {
                 await this.emailNotifier.encolar({
                     tipo: 'revocacion',
-                    destinatario: jefeMatricial.correoPersonal,
+                    destinatario: otroJefe.correoPersonal,
                     solicitudId: solicitud.id,
                     datos: { empleado: empleado.nombre, dias: String(solicitud.cantidadDias) },
                 });

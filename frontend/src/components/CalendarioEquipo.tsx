@@ -117,6 +117,7 @@ export function CalendarioEquipo({ solicitudes }: CalendarioEquipoProps) {
 
     return (
         <div className="space-y-6">
+
         <div className="flex flex-col lg:flex-row gap-8">
             <div className="w-full max-w-xs">
                 <div className="flex items-center justify-between mb-3">

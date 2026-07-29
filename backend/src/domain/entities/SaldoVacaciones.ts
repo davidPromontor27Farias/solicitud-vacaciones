@@ -8,6 +8,8 @@ export interface SaldoVacacionesProps {
     diasPendientes: number;
     inicioValidez: Date;
     fechaVencimiento: Date;
+    finValidez: Date;
+    fechaLimiteDisfrute: Date;
 }
 
 export class SaldoVacaciones {
@@ -20,9 +22,20 @@ export class SaldoVacaciones {
     get diasPendientes() {return this.props.diasPendientes}
     get inicioValidez() {return this.props.inicioValidez}
     get fechaVencimiento(){ return this.props.fechaVencimiento}
+    get finValidez() {return this.props.finValidez}
+    get fechaLimiteDisfrute() {return this.props.fechaLimiteDisfrute}
+
+    estaVencido(fecha: Date): boolean {
+        return fecha > this.props.fechaLimiteDisfrute;
+    }
+    diasPorVencer(fecha: Date): number{
+        const msPorDia = 24 * 60 * 60 * 1000;
+        return Math.ceil((this.props.fechaLimiteDisfrute.getTime() - fecha.getTime()) /msPorDia);
+    }
+
 
     estaVigente(fecha: Date): boolean {
-        return fecha >= this.props.inicioValidez && fecha <= this.props.fechaVencimiento;
+        return fecha >= this.props.inicioValidez && fecha <= this.props.fechaLimiteDisfrute;
     }
 
     tieneDiasSuficientes(cantidadDias: number): boolean{
@@ -40,6 +53,14 @@ export class SaldoVacaciones {
     restituirDias(cantidadDias: number): void{
         this.props.diasPendientes += cantidadDias;
         this.props.diasDisfrutados -= cantidadDias;
+    }
+
+    reconciliarDesdeSap(diasPorLey: number, diasDisfrutadosSap: number, fechaVencimiento: Date): void {
+        const diasDisfrutados = Math.max(this.props.diasDisfrutados, diasDisfrutadosSap);
+        this.props.diasPorLey = diasPorLey;
+        this.props.diasDisfrutados = diasDisfrutados;
+        this.props.diasPendientes = Math.max(diasPorLey - diasDisfrutados, 0);
+        this.props.fechaVencimiento = fechaVencimiento;
     }
 
     toProps(): SaldoVacacionesProps {

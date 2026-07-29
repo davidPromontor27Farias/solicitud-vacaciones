@@ -8,19 +8,32 @@ export interface DetalleRevision {
     dias: string[];
     backupNombre: string | null;
     colisiones: Record<string, string[]>;
+    diasEquipoAprobados: Record<string, string[]>;
+    diasEquipoPendientes: Record<string, string[]>;
+    esJefeDirecto: boolean;
+    esJefeMatricial: boolean;
 }
 
 export function obtenerDetalleRevision(token: string): Promise<DetalleRevision> {
     return apiFetch(`/revision/${token}`);
 }
 
-export function aprobarPorEnlace(token: string, backupNombre: string): Promise<{ id: string; estatus: string }> {
+export function aprobarPorEnlace(token: string): Promise<{ id: string; estatus: string }> {
     return apiFetch(`/revision/${token}/aprobar`, {
         method: 'POST',
-        body: JSON.stringify({ backupNombre }),
     });
 }
 
-export function rechazarPorEnlace(token: string): Promise<{ id: string; estatus: string }> {
-    return apiFetch(`/revision/${token}/rechazar`, { method: 'POST' });
+export function rechazarPorEnlace(token: string, motivo: string): Promise<{ id: string; estatus: string }> {
+    return apiFetch(`/revision/${token}/rechazar`, {
+        method: 'POST',
+        body: JSON.stringify({ motivo }),
+    });
+}
+
+export function declinarPorEnlace(token: string, motivo: string): Promise<{ id: string; estatus: string }> {
+    return apiFetch(`/revision/${token}/declinar`, {
+        method: 'POST',
+        body: JSON.stringify({ motivo }),
+    });
 }

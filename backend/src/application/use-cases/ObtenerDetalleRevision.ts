@@ -14,6 +14,10 @@ export interface DetalleRevisionResultado {
     dias: string[];
     backupNombre: string | null;
     colisiones: Record<string, string[]>;
+    diasEquipoAprobados: Record<string, string[]>;
+    diasEquipoPendientes: Record<string, string[]>;
+    esJefeDirecto: boolean;
+    esJefeMatricial: boolean;
 }
 
 export class ObtenerDetalleRevision {
@@ -33,7 +37,9 @@ export class ObtenerDetalleRevision {
             throw new NotFoundError('Empleado no encontrado');
         }
 
-        if (empleado.jefeDirectoId !== input.jefeId) {
+        const esJefeDirecto = empleado.jefeDirectoId === input.jefeId;
+        const esJefeMatricial = empleado.jefeMatricialId === input.jefeId;
+        if (!esJefeDirecto && !esJefeMatricial) {
             throw new UnauthorizedError('No tienes permiso para revisar esta solicitud');
         }
 
@@ -44,17 +50,36 @@ export class ObtenerDetalleRevision {
         const equipo = await this.empleadoRepo.listarEquipoDirecto(input.jefeId);
         const nombrePorId = new Map(equipo.map((e) => [e.id, e.nombre]));
 
-        const solicitudesEquipo = await this.solicitudRepo.listarPorEquipo(input.jefeId, primerDia, ultimoDia);
+        // Se amplía un mes antes y un mes después del mes de la solicitud para que el
+        // calendario de revisión tenga datos aunque el jefe navegue un mes hacia
+        // adelante/atrás con las flechas (esos clics no vuelven a consultar el backend).
+        const rangoEquipoDesde = new Date(Date.UTC(primerDia.getUTCFullYear(), primerDia.getUTCMonth() - 1, 1));
+        const rangoEquipoHasta = new Date(Date.UTC(ultimoDia.getUTCFullYear(), ultimoDia.getUTCMonth() + 2, 0));
+        const rangoEquipoDesdeStr = rangoEquipoDesde.toISOString().slice(0, 10);
+        const rangoEquipoHastaStr = rangoEquipoHasta.toISOString().slice(0, 10);
+        const solicitudesEquipo = await this.solicitudRepo.listarPorEquipo(input.jefeId, rangoEquipoDesde, rangoEquipoHasta);
 
         const colisiones: Record<string, string[]> = {};
+        const diasEquipoAprobados: Record<string, string[]> = {};
+        const diasEquipoPendientes: Record<string, string[]> = {};
         for (const otra of solicitudesEquipo) {
             if (otra.id === solicitud.id) continue;
-            if (otra.estatus !== 'aprobada') continue;
+            if (otra.estatus !== 'aprobada' && otra.estatus !== 'pendiente') continue;
 
+            const nombre = nombrePorId.get(otra.empleadoId) ?? 'Otro empleado';
             for (const d of otra.dias.map((f) => f.toISOString().slice(0, 10))) {
-                if (dias.includes(d)) {
-                    const nombre = nombrePorId.get(otra.empleadoId) ?? 'Otro empleado';
-                    colisiones[d] = [...(colisiones[d] ?? []), nombre];
+                // listarPorEquipo filtra qué SOLICITUDES califican por el rango de fechas,
+                // pero devuelve TODOS los días de cada una — se recorta aquí para no filtrar
+                // días de meses fuera del rango consultado.
+                if (d < rangoEquipoDesdeStr || d > rangoEquipoHastaStr) continue;
+
+                if (otra.estatus === 'aprobada') {
+                    diasEquipoAprobados[d] = [...(diasEquipoAprobados[d] ?? []), nombre];
+                    if (dias.includes(d)) {
+                        colisiones[d] = [...(colisiones[d] ?? []), nombre];
+                    }
+                } else {
+                    diasEquipoPendientes[d] = [...(diasEquipoPendientes[d] ?? []), nombre];
                 }
             }
         }
@@ -66,6 +91,10 @@ export class ObtenerDetalleRevision {
             dias,
             backupNombre: solicitud.backupNombre,
             colisiones,
+            diasEquipoAprobados,
+            diasEquipoPendientes,
+            esJefeDirecto,
+            esJefeMatricial
         };
     }
 }

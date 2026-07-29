@@ -8,6 +8,13 @@ function parsearFechaISO(iso: string): Date {
     return new Date(Date.UTC(anio, mes - 1, dia));
 }
 
+export function formatearFecha(iso: string): string {
+    const fecha = parsearFechaISO(iso);
+    const dia = String(fecha.getUTCDate()).padStart(2, '0');
+    const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0');
+    return `${dia}/${mes}/${fecha.getUTCFullYear()}`;
+}
+
 function sonAdyacentes(a: Date, b: Date): boolean {
     const diffDias = Math.round((b.getTime() - a.getTime()) / 86_400_000);
     if (diffDias === 1) return true;

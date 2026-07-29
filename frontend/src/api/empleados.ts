@@ -5,7 +5,9 @@ export interface PeriodoSaldo {
     diasDisfrutados: number;
     diasPendientes: number;
     inicioValidez: string;
+    finValidez: string;
     fechaVencimiento: string;
+    fechaLimiteDisfrute: string;
 }
 
 export interface PerfilEmpleado {
@@ -17,6 +19,7 @@ export interface PerfilEmpleado {
     correoPersonal: string | null;
     jefeDirecto: { nombre: string } | null;
     esJefe: boolean;
+    backupNombre: string | null;
     saldos: PeriodoSaldo[];
     totalPendientes: number;
     totalDisfrutados: number;

@@ -82,7 +82,7 @@ export function RecuperarPasswordPage() {
                         <button
                             type="submit"
                             disabled={cargando}
-                            className="w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                            className="w-full bg-green-700 text-white rounded-md py-2 text-sm font-medium hover:bg-green-900 disabled:opacity-50 transition-colors"
                         >
                             Enviar código
                         </button>
@@ -129,7 +129,7 @@ export function RecuperarPasswordPage() {
                         <button
                             type="submit"
                             disabled={cargando}
-                            className="w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                            className="w-full bg-green-700 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                         >
                             Guardar contraseña
                         </button>

@@ -1,7 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { SolicitudVacaciones, SolicitudVacacionesProps } from "../../../domain/entities/SolicitudVacaciones";
-import { FiltroHistorial, ResultadoPaginado, SolicitudVacacionesRepository } from "../../../domain/repositories/SolicitudVacacionesRepository";
-
+import { FiltroHistorial, FiltroPorEstatus, ResultadoPaginado, SolicitudVacacionesRepository} from '../../../domain/repositories/SolicitudVacacionesRepository'; 
 
 
 
@@ -11,6 +10,7 @@ type SolicitudConDias = {
     estatus: SolicitudVacacionesProps["estatus"];
     backupNombre: string | null;
     motivoRevocacion: string | null;
+    motivoRechazo: string | null;
     revocadoPorId: string | null;
     createdAt: Date;
     resueltoAt: Date | null;
@@ -25,6 +25,7 @@ function toDomain(row: SolicitudConDias): SolicitudVacaciones{
         dias: row.diasSolicitados.map(d => d.fecha),
         backupNombre: row.backupNombre,
         motivoRevocacion: row.motivoRevocacion,
+        motivoRechazo: row.motivoRechazo,
         revocadoPorId: row.revocadoPorId,
         createdAt: row.createdAt,
         resueltoAt: row.resueltoAt
@@ -53,7 +54,7 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
     async buscarPorId(id: string): Promise<SolicitudVacaciones | null> {
         const row = await this.prisma.solicitudVacaciones.findUnique({
             where: {id},
-            include: {diasSolicitados: true},
+            include: {diasSolicitados: {orderBy: {fecha: 'asc'}}},
         });
         return row ? toDomain(row) : null;
     }
@@ -66,6 +67,7 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
                 estatus: props.estatus,
                 backupNombre: props.backupNombre ?? null,
                 motivoRevocacion: props.motivoRevocacion ?? null,
+                motivoRechazo: props.motivoRechazo ?? null,
                 revocadoPorId: props.revocadoPorId ?? null,
                 resueltoAt: props.resueltoAt
             }
@@ -77,7 +79,7 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
         const [rows, total] = await Promise.all([
             this.prisma.solicitudVacaciones.findMany({
                 where: {empleadoId: filtro.empleadoId},
-                include: {diasSolicitados: true},
+                include: {diasSolicitados: {orderBy: {fecha: 'asc'}}},
                 orderBy: {createdAt: 'desc'},
                 skip,
                 take: filtro.porPagina
@@ -99,8 +101,17 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
                 empleado: {jefeDirectoId},
                 diasSolicitados: {some: {fecha: {gte: desde, lte: hasta}}},
             },
-            include: {diasSolicitados: true},
+            include: {diasSolicitados: {orderBy: {fecha: 'asc'}}},
         });
         return rows.map(toDomain)
+    }
+
+    async listarPorEstatus(filtro: FiltroPorEstatus): Promise<ResultadoPaginado<SolicitudVacaciones>> {
+        const skip = (filtro.pagina -  1) * filtro.porPagina;
+        const [rows, total] = await Promise.all([
+            this.prisma.solicitudVacaciones.findMany({
+                where: {estatus: filtro.estatus}
+            })
+        ])
     }
 }

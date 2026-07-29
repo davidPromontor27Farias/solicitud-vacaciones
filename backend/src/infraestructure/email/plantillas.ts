@@ -4,6 +4,15 @@ interface CorreoRenderizado {
     html: string;
 }
 
+function escaparHtml(valor: string): string {
+    return valor
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}   
+
 function envolverPlantilla(contenido: string): string {
     return `<!doctype html>
 <html lang="es">
@@ -55,7 +64,7 @@ export function construirCorreo(tipo: string, datos: Record<string, string>): Co
                 subject: 'Activa tu cuenta de Vacaciones',
                 text: `Hola ${nombre}, tu código de activación es: ${codigo}\n\nIngrésalo en la pantalla de activación de cuenta junto con tu nueva contraseña. Este código expira en 24 horas.`,
                 html: envolverPlantilla(`
-                    <p style="margin:0 0 16px;">Hola <strong>${nombre}</strong>,</p>
+                    <p style="margin:0 0 16px;">Hola <strong>${escaparHtml(nombre)}</strong>,</p>
                     <p style="margin:0 0 24px;">Usa el siguiente código para activar tu cuenta y crear tu contraseña:</p>
                     <p style="margin:0 0 24px;text-align:center;">
                         <span style="display:inline-block;background-color:#eef2ff;color:#4338ca;font-size:28px;font-weight:700;letter-spacing:8px;padding:12px 20px;border-radius:8px;">${codigo}</span>
@@ -72,7 +81,7 @@ export function construirCorreo(tipo: string, datos: Record<string, string>): Co
                 subject: 'Restablece tu contraseña de Vacaciones',
                 text: `Hola ${nombre}, tu código para restablecer tu contraseña es: ${codigo}\n\nIngrésalo en la pantalla de recuperar contraseña junto con tu nueva contraseña. Este código expira en 1 hora.`,
                 html: envolverPlantilla(`
-                    <p style="margin:0 0 16px;">Hola <strong>${nombre}</strong>,</p>
+                    <p style="margin:0 0 16px;">Hola <strong>${escaparHtml(nombre)}</strong>,</p>
                     <p style="margin:0 0 24px;">Recibimos una solicitud para restablecer tu contraseña. Usa este código:</p>
                     <p style="margin:0 0 24px;text-align:center;">
                         <span style="display:inline-block;background-color:#eef2ff;color:#4338ca;font-size:28px;font-weight:700;letter-spacing:8px;padding:12px 20px;border-radius:8px;">${codigo}</span>
@@ -92,7 +101,7 @@ export function construirCorreo(tipo: string, datos: Record<string, string>): Co
                 html: envolverPlantilla(`
                     <p style="margin:0 0 16px;">Tienes una nueva solicitud de vacaciones pendiente de revisión:</p>
                     ${tabla(
-                        filaTabla('Empleado', empleado) +
+                        filaTabla('Empleado', escaparHtml(empleado)) +
                         filaTabla('Días solicitados', dias) +
                         filaTabla('A partir de', primerDia)
                     )}
@@ -113,7 +122,7 @@ export function construirCorreo(tipo: string, datos: Record<string, string>): Co
                     <p style="margin:0 0 16px;">Buenas noticias — tu solicitud de vacaciones fue <strong style="color:#059669;">aprobada</strong>.</p>
                     ${tabla(
                         filaTabla('Días', dias) +
-                        filaTabla('Backup asignado', backup)
+                        filaTabla('Backup asignado', escaparHtml(backup))
                     )}
                 `),
             };
@@ -121,11 +130,13 @@ export function construirCorreo(tipo: string, datos: Record<string, string>): Co
 
         case 'solicitud_rechazada': {
             const dias = datos.dias ?? '';
+            const motivo = datos.motivo ?? '';
             return {
                 subject: 'Tu solicitud de vacaciones fue rechazada',
-                text: `Tu solicitud de ${dias} día(s) fue rechazada.`,
+                text: `Tu solicitud de ${dias} día(s) fue rechazada. Motivo: ${motivo}`,
                 html: envolverPlantilla(`
-                    <p style="margin:0;">Tu solicitud de <strong>${dias}</strong> día(s) de vacaciones fue <strong style="color:#dc2626;">rechazada</strong>.</p>
+                    <p style="margin:0 0 16px;">Tu solicitud de <strong>${dias}</strong> día(s) de vacaciones fue <strong style="color:#dc2626;">rechazada</strong>.</p>
+                    ${tabla(filaTabla('Motivo', escaparHtml(motivo)))}
                 `),
             };
         }
@@ -135,10 +146,10 @@ export function construirCorreo(tipo: string, datos: Record<string, string>): Co
             const motivo = datos.motivo ?? '';
             const empleado = datos.empleado;
             return {
-                subject: empleado ? `Revocación de vacaciones: ${empleado}` : 'Tu solicitud de vacaciones fue revocada',
+                subject: empleado ? `Revocación de vacaciones: ${escaparHtml(empleado)}` : 'Tu solicitud de vacaciones fue revocada',
                 text: empleado
-                    ? `${empleado} tuvo ${dias} día(s) de vacaciones revocados. Motivo: ${motivo}`
-                    : `Tu solicitud de ${dias} día(s) fue revocada. Motivo: ${motivo}`,
+                    ? `${empleado} tuvo ${dias} día(s) de vacaciones revocados. Motivo: ${escaparHtml(motivo)}`
+                    : `Tu solicitud de ${dias} día(s) fue revocada. Motivo: ${escaparHtml(motivo)}`,
                 html: envolverPlantilla(`
                     <p style="margin:0 0 16px;">
                         ${empleado ? `<strong>${empleado}</strong> tuvo` : 'Tu solicitud de vacaciones ya aprobada fue'}
@@ -146,7 +157,7 @@ export function construirCorreo(tipo: string, datos: Record<string, string>): Co
                     </p>
                     ${tabla(
                         filaTabla('Días', dias) +
-                        filaTabla('Motivo', motivo)
+                        filaTabla('Motivo', escaparHtml(motivo))
                     )}
                 `),
             };
@@ -156,12 +167,14 @@ export function construirCorreo(tipo: string, datos: Record<string, string>): Co
             const empleado = datos.empleado ?? '';
             const dias = datos.dias ?? '';
             return {
-                subject: 'Aviso de vacaciones aprobadas en tu área',
-                text: `${empleado} tiene ${dias} día(s) de vacaciones aprobados.`,
+                subject: 'Aviso de vacacions aprobadas en tu área',
+                text: `${empleado} tiene ${dias} día(s) de vacaciones aprobadas. Si no estas de acuerdo, puedes declinarla: 
+            ${process.env.APP_URL ?? ''}/revisar/${datos.enlaceToken ?? ''}`,
                 html: envolverPlantilla(`
-                    <p style="margin:0;"><strong>${empleado}</strong> tiene <strong>${dias}</strong> día(s) de vacaciones aprobados.</p>
-                `),
-            };
+                    <p style="margin: 0 0 16px,"><strong>${empleado}</strong> tiene <strong>${dias}</strong> días(s) de vacaciones aprobadas.</p>
+                    <p style="margin: 0 0 16px; color:#6b7280;">Si no estas de acuerdo, puedes declinarla. Si estas de acuerdo, no hagas nada.</p>
+                `)
+            }
         }
 
         default: {

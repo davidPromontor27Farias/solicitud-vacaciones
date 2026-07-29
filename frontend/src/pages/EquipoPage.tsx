@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     aprobarSolicitud,
     obtenerCalendarioMiEquipo,
@@ -12,6 +12,8 @@ import { obtenerPerfil } from '../api/empleados';
 import { ApiError } from '../api/client';
 import { CalendarioColisiones } from '../components/CalendarioColisiones';
 import { CalendarioEquipo } from '../components/CalendarioEquipo';
+import { PanelEquipoMes } from '../components/PanelEquipoMes';
+import { ArrowLeft } from 'lucide-react';
 
 const ESTATUS_ESTILOS: Record<string, string> = {
     pendiente: 'bg-yellow-100 text-yellow-800',
@@ -27,9 +29,18 @@ export function EquipoPage() {
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [accionEnCurso, setAccionEnCurso] = useState<string | null>(null);
+    const [mesActual, setMesActual] = useState<Date | null>(null);
 
     const seleccionadaId = searchParams.get('solicitud');
     const seleccionada = solicitudes.find((s) => s.id === seleccionadaId) ?? null;
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!seleccionada) return;
+        const primerDia = new Date(`${seleccionada.dias[0]}T00:00:00.000Z`);
+        setMesActual(new Date(Date.UTC(primerDia.getUTCFullYear(), primerDia.getUTCMonth(), 1)));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [seleccionada?.id]);
 
     async function cargar() {
         setCargando(true);
@@ -57,13 +68,10 @@ export function EquipoPage() {
     }
 
     async function manejarAprobar(id: string) {
-        const backupNombre = window.prompt('Nombre de la persona que cubrirá durante la ausencia:');
-        if (!backupNombre) return;
-
         setAccionEnCurso(id);
         setError(null);
         try {
-            await aprobarSolicitud(id, backupNombre);
+            await aprobarSolicitud(id);
             await cargar();
         } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Error inesperado');
@@ -73,10 +81,13 @@ export function EquipoPage() {
     }
 
     async function manejarRechazar(id: string) {
+        const motivo = window.prompt('Motivo del rechazo:');
+        if (!motivo || !motivo.trim()) return;
+
         setAccionEnCurso(id);
         setError(null);
         try {
-            await rechazarSolicitud(id);
+            await rechazarSolicitud(id, motivo.trim());
             await cargar();
         } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Error inesperado');
@@ -117,22 +128,36 @@ export function EquipoPage() {
 
     const diasEnColision = new Set<string>();
     const colisionesPorDia = new Map<string, string[]>();
+    const diasEquipoAprobados: Record<string, string[]> = {};
+    const diasEquipoPendientes: Record<string, string[]> = {};
     if (seleccionada) {
         for (const otra of solicitudes) {
             if (otra.id === seleccionada.id) continue;
-            if (otra.estatus !== 'aprobada') continue;
+            if (otra.estatus !== 'aprobada' && otra.estatus !== 'pendiente') continue;
+
+            const nombre = otra.empleadoNombre ?? 'Otro empleado';
             for (const dia of otra.dias) {
-                if (seleccionada.dias.includes(dia)) {
-                    diasEnColision.add(dia);
-                    const lista = colisionesPorDia.get(dia) ?? [];
-                    lista.push(otra.empleadoNombre ?? 'Otro empleado');
-                    colisionesPorDia.set(dia, lista);
+                if (otra.estatus === 'aprobada') {
+                    diasEquipoAprobados[dia] = [...(diasEquipoAprobados[dia] ?? []), nombre];
+                    if (seleccionada.dias.includes(dia)) {
+                        diasEnColision.add(dia);
+                        const lista = colisionesPorDia.get(dia) ?? [];
+                        lista.push(nombre);
+                        colisionesPorDia.set(dia, lista);
+                    }
+                } else {
+                    diasEquipoPendientes[dia] = [...(diasEquipoPendientes[dia] ?? []), nombre];
                 }
             }
         }
     }
 
     return (
+        <div className="space-y-6">
+
+        <button onClick={() => navigate(-1)}>
+            <ArrowLeft className='text-white cursor-pointer '/>
+        </button>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-lg border border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Solicitudes de mi equipo</h2>
@@ -167,7 +192,7 @@ export function EquipoPage() {
                 {!seleccionada && (
                     <p className="text-sm text-gray-500">Selecciona una solicitud de la lista para ver su detalle.</p>
                 )}
-                {seleccionada && (
+                {seleccionada && mesActual && (
                     <div className="space-y-4">
                         <div>
                             <p className="text-sm text-gray-900 font-medium">{seleccionada.empleadoNombre ?? seleccionada.empleadoId}</p>
@@ -177,11 +202,21 @@ export function EquipoPage() {
                             </span>
                         </div>
 
-                        <CalendarioColisiones
-                            mesInicial={new Date(`${seleccionada.dias[0]}T00:00:00.000Z`)}
-                            diasSolicitados={seleccionada.dias}
-                            diasEnColision={diasEnColision}
-                        />
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <CalendarioColisiones
+                                mesActual={mesActual}
+                                onMesActualChange={setMesActual}
+                                diasSolicitados={seleccionada.dias}
+                                diasEnColision={diasEnColision}
+                                diasEquipoAprobados={diasEquipoAprobados}
+                                diasEquipoPendientes={diasEquipoPendientes}
+                            />
+                            <PanelEquipoMes
+                                mesActual={mesActual}
+                                diasEquipoAprobados={diasEquipoAprobados}
+                                diasEquipoPendientes={diasEquipoPendientes}
+                            />
+                        </div>
 
                         {diasEnColision.size > 0 && (
                             <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
@@ -226,6 +261,12 @@ export function EquipoPage() {
                     </div>
                 )}
             </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Calendario del equipo</h2>
+            <CalendarioEquipo solicitudes={solicitudes.filter((s) => s.estatus === 'aprobada')} />
+        </div>
         </div>
     );
 }

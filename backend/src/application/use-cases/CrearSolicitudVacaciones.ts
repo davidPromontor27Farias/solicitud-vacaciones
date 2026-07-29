@@ -12,6 +12,7 @@ import { NotFoundError, ValidationError } from "../../shared/errors";
 export interface CrearSolicitudVacacionesInput {
     empleadoId: string;
     dias: Date[];
+    backupNombre: string;
 }
 
 function inicioDelDiaUtc(fecha: Date): Date {
@@ -41,10 +42,19 @@ export class CrearSolicitudVacaciones {
             throw new ValidationError('No puedes solicitar días que ya pasaron');
         }
 
+        if(!input.backupNombre?.trim()){
+            throw new ValidationError('El nombre del backup es obligatorio');
+        }
+
         const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id)
-        const totalDisponible = saldos
-            .filter((s) => s.estaVigente(rango.primerDia))
-            .reduce((acc, s) => acc + s.diasPendientes, 0)
+
+        const diaSinSaldoVigente = rango.valores.find((dia) => !saldos.some((s) => s.estaVigente(dia)));
+        if (diaSinSaldoVigente) {
+            throw new ValidationError(`No cuentas con saldo vigente para el ${diaSinSaldoVigente.toISOString().slice(0, 10)}`);
+        }
+
+        const saldosAplicables = saldos.filter((s) => rango.valores.some((dia) => s.estaVigente(dia)));
+        const totalDisponible = saldosAplicables.reduce((acc, s) => acc + s.diasPendientes, 0);
 
         if (totalDisponible < rango.cantidad) {
             throw new ValidationError('No cuentas con suficientes días disponibles para esta solicitud');
@@ -55,7 +65,7 @@ export class CrearSolicitudVacaciones {
             empleadoId: empleado.id,
             estatus: 'pendiente',
             dias: rango.valores,
-            backupNombre: null,
+            backupNombre: input.backupNombre.trim(),
             motivoRevocacion: null,
             revocadoPorId: null,
             createdAt: new Date(),

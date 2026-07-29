@@ -69,7 +69,16 @@ export function LoginPage() {
             
             {/* Capa de sombra/overlay */}
             <div className="absolute inset-0 bg-black/50" />
-            
+
+            {/* Accesos de administración */}
+            <div className="absolute top-4 right-4 z-20 text-right font-bold">
+                <Link
+                    to="/admin/login"
+                >
+                    Admin
+                </Link>
+            </div>
+
             {/* Contenido del formulario */}
             <div className="relative z-10 w-full max-w-sm bg-white/50 backdrop-blur-sm p-8 rounded-lg shadow-lg border border-white/20">
                 <div className='w-full flex flex-col justify-center items-center'>

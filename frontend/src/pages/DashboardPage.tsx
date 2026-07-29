@@ -22,7 +22,7 @@ import { crearSolicitud, obtenerMisSolicitudes, type SolicitudResumen } from '..
 import { obtenerPerfil, type PerfilEmpleado } from '../api/empleados';
 import { ApiError } from '../api/client';
 import { SelectorDias } from '../components/SelectorDias';
-import { formatearDiasComoRangos } from '../utils/fechas';
+import { formatearDiasComoRangos, formatearFecha } from '../utils/fechas';
 
 
 const ESTATUS_ESTILOS: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
@@ -70,12 +70,16 @@ export function DashboardPage() {
   const [errorForm, setErrorForm] = useState<string | null>(null);
   const [exitoForm, setExitoForm] = useState<string |null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [backupNombre, setBackupNombre] = useState('');
+
 
   async function cargarPerfil() {
     setCargandoPerfil(true);
     setErrorPerfil(null);
     try {
-      setPerfil(await obtenerPerfil());
+      const p = await obtenerPerfil();
+      setPerfil(p);
+      setBackupNombre((actual) => actual || p.backupNombre || '');
     } catch (err) {
       setErrorPerfil(err instanceof ApiError ? err.message : 'Error inesperado');
     } finally {
@@ -123,9 +127,13 @@ export function DashboardPage() {
       setErrorForm('Selecciona al menos un día en el calendario');
       return;
     }
+    if (!backupNombre.trim()) {
+      setErrorForm('Indica quién cubrirá tu ausencia');
+      return;
+    }
     setEnviando(true);
     try {
-      await crearSolicitud(diasSeleccionados);
+      await crearSolicitud(diasSeleccionados, backupNombre.trim());
       setDiasSeleccionados([]);
       await Promise.all([cargarHistorial(), cargarPerfil()]);
       setExitoForm('Solicitud enviada correctamente');
@@ -255,7 +263,9 @@ export function DashboardPage() {
                             <th className="font-medium py-2 pr-4 text-left">Disfrutados</th>
                             <th className="font-medium py-2 pr-4 text-left">Pendientes</th>
                             <th className="font-medium py-2 pr-4 text-left">Disponible desde</th>
-                            <th className="font-medium py-2 text-left">Vencen</th>
+                            <th className="font-medium py-2 pr-4 text-left">Fin de validez</th>
+                            <th className="font-medium py-2 pr-4 text-left">Vencen</th>
+                            <th className="font-medium py-2 text-left">Fecha límite</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -265,7 +275,9 @@ export function DashboardPage() {
                             <td className="py-2 pr-4 text-gray-600">{s.diasDisfrutados}</td>
                             <td className="py-2 pr-4 text-[#4a8b2c] font-medium">{s.diasPendientes}</td>
                             <td className="py-2 pr-4 text-gray-600">{s.inicioValidez}</td>
-                            <td className="py-2 text-gray-600">{s.fechaVencimiento}</td>
+                            <td className="py-2 pr-4 text-gray-600">{formatearFecha(s.finValidez)}</td>
+                            <td className="py-2 pr-4 text-gray-600">{s.fechaVencimiento}</td>
+                            <td className="py-2 text-gray-600">{formatearFecha(s.fechaLimiteDisfrute)}</td>
                             </tr>
                         ))}
                         </tbody>
@@ -332,6 +344,16 @@ export function DashboardPage() {
                     <span>{errorForm}</span>
                     </div>
                 )}
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Backup (quién te cubrirá)</label>
+                    <input
+                        type="text"
+                        value={backupNombre}
+                        onChange={(e) => setBackupNombre(e.target.value)}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    />
+                </div>
 
                 <button
                     type="button"

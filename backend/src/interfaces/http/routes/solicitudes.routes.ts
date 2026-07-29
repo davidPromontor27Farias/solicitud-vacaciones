@@ -7,7 +7,7 @@ import { IdGenerator } from '../../../application/ports/IdGenerator';
 import { EnlaceRevisionGenerator } from '../../../application/ports/EnlaceRevisionGenerator';
 import { CrearSolicitudVacaciones } from '../../../application/use-cases/CrearSolicitudVacaciones';
 import { authenticate } from '../middlewares/authenticate';
-import { crearSolicitudSchema, historialEmpleadoQuerySchema, historialEquipoQuerySchema, revocarSolicitudSchema } from '../schemas/solicitudes.schemas';
+import { crearSolicitudSchema, historialEmpleadoQuerySchema, historialEquipoQuerySchema, revocarSolicitudSchema, rechazarSolicitudSchema } from '../schemas/solicitudes.schemas';
 import { AprobarSolicitud } from '../../../application/use-cases/AprobarSolicitud';
 import { RechazarSolicitud } from '../../../application/use-cases/RechazarSolicitud';
 import { RevocarSolicitud } from '../../../application/use-cases/RevocarSolicitud';
@@ -34,7 +34,7 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
         deps.enlaceGenerator,
     );
 
-    const aprobarSolicitud = new AprobarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier);
+    const aprobarSolicitud = new AprobarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.enlaceGenerator);
     const rechazarSolicitud = new RechazarSolicitud(deps.empleadoRepo, deps.solicitudRepo, deps.emailNotifier);
     const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier);
     const obtenerHistorialEmpleado = new ObtenerHistorialEmpleado(deps.solicitudRepo);
@@ -46,7 +46,8 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
         const empleadoId = (request.user as { sub: string }).sub;
         const dias = body.dias.map((d) => new Date(`${d}T00:00:00.000Z`));
 
-        const solicitud = await crearSolicitud.ejecutar({ empleadoId, dias });
+        const solicitud = await crearSolicitud.ejecutar({ empleadoId, dias, backupNombre: body.backupNombre});
+
 
         reply.status(201).send({
             id: solicitud.id,
@@ -62,8 +63,7 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
 
     const solicitud = await aprobarSolicitud.ejecutar({
         solicitudId: id,
-        aprobadorId,
-        backupNombre: body.backupNombre,
+        aprobadorId
     });
 
         reply.send({ id: solicitud.id, estatus: solicitud.estatus, backupNombre: solicitud.backupNombre });
@@ -71,11 +71,12 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
 
     app.post('/solicitudes/:id/rechazar', { preHandler: authenticate }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const body = rechazarSolicitudSchema.parse(request.body);
     const aprobadorId = (request.user as { sub: string }).sub;
 
-    const solicitud = await rechazarSolicitud.ejecutar({ solicitudId: id, aprobadorId });
+    const solicitud = await rechazarSolicitud.ejecutar({ solicitudId: id, aprobadorId, motivo: body.motivo });
 
-        reply.send({ id: solicitud.id, estatus: solicitud.estatus });
+        reply.send({ id: solicitud.id, estatus: solicitud.estatus, motivoRechazo: solicitud.motivoRechazo });
     });
 
 

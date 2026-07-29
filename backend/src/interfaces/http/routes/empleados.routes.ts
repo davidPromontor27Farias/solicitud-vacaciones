@@ -21,7 +21,9 @@ export function registerEmpleadosRoutes(app: FastifyInstance, deps: EmpleadosDep
             saldos: perfil.saldos.map((s) => ({
                 ...s,
                 inicioValidez: s.inicioValidez.toISOString().slice(0, 10),
+                finValidez: s.finValidez.toISOString().slice(0, 10),
                 fechaVencimiento: s.fechaVencimiento.toISOString().slice(0, 10),
+                fechaLimiteDisfrute: s.fechaLimiteDisfrute.toISOString().slice(0, 10)
             })),
         });
     });

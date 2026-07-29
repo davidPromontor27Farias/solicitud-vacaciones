@@ -7,6 +7,7 @@ import { NotFoundError, UnauthorizedError, ValidationError } from "../../shared/
 export interface RechazarSolicitudInput {
     solicitudId: string;
     aprobadorId: string;
+    motivo: string;
 }
 
 export class RechazarSolicitud {
@@ -32,7 +33,7 @@ export class RechazarSolicitud {
         }
 
         try {
-            solicitud.rechazar();
+            solicitud.rechazar(input.motivo);
         } catch (error) {
             throw new ValidationError(error instanceof Error ? error.message : 'No se pudo rechazar la solicitud');
         }
@@ -43,7 +44,7 @@ export class RechazarSolicitud {
                 tipo: 'solicitud_rechazada',
                 destinatario: empleado.correoPersonal,
                 solicitudId: solicitud.id,
-                datos: { dias: String(solicitud.cantidadDias) },
+                datos: { dias: String(solicitud.cantidadDias), motivo: solicitud.motivoRechazo ?? '' },
             });
         }
 

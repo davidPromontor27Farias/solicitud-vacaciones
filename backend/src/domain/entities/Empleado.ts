@@ -7,6 +7,7 @@ export interface EmpleadoProps {
     puesto?: string | null;
     departamento?: string | null;
     correoPersonal?: string | null;
+    backupNombre?: string | null;
     passwordHash?: string | null;
     primerAcceso: boolean;
     intentosFallidos: number;
@@ -25,6 +26,7 @@ export class Empleado {
     get puesto() {return this.props.puesto ?? null;}
     get departamento() {return this.props.departamento ?? null;}
     get correoPersonal() {return this.props.correoPersonal ?? null;}
+    get backupNombre(){return this.props.backupNombre ?? null}  
     get passwordHash(){return this.props.passwordHash}
     get primerAcceso(){return this.props.primerAcceso;}
     get jefeDirectoId() {return this.props.jefeDirectoId ?? null;}

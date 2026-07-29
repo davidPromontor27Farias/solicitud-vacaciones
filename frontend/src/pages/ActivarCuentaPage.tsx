@@ -144,7 +144,7 @@ export function ActivarCuentaPage() {
                         <button
                             type="submit"
                             disabled={cargando}
-                            className="w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                            className="w-full bg-green-700 text-white rounded-md py-2 text-sm font-medium hover:bg-green-900  cursor-pointer disabled:opacity-50"
                         >
                             Crear contraseña
                         </button>

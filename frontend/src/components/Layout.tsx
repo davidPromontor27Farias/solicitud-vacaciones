@@ -21,15 +21,20 @@ export function Layout() {
             <div   className='z-10 relative'>
                 <header className="bg-white border-b border-gray-200 px-4 flex items-center justify-between">
                     <nav className="flex gap-4 text-sm font-medium text-gray-600 items-center">
+                        
                         <img className='w-[60px]' src="/iconIQ.png"/>
 
-                        <div className='flex flex-col items-center justify-center'>
-                            <Users/>
-                            <Link to="/equipo" className="hover:text-gray-900">Mi equipo</Link>
+
+                        <div className='flex flex-row gap-2 items-center justify-center'>
+                            
+                            <Link to="/equipo" className="hover:text-gray-900 flex justify-center items-center gap-2">
+                                <Users/>
+                                Mi equipo
+                            
+                            </Link>
                         </div>
                     </nav>
                     <div className="flex items-center gap-4 text-sm">
-                        <User/>
                         <button onClick={cerrarSesion} className="text-red-600 hover:text-red-800 cursor-pointer">Cerrar sesión</button>
                     </div>
                 </header>

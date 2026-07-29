@@ -1,9 +1,15 @@
-import { SolicitudVacaciones } from "../entities/SolicitudVacaciones";
+import { EstatusSolicitud, SolicitudVacaciones } from "../entities/SolicitudVacaciones";
 
 
 export interface FiltroHistorial {
 
     empleadoId: string;
+    pagina: number;
+    porPagina: number;
+}
+
+export interface FiltroPorEstatus {
+    estatus: EstatusSolicitud;
     pagina: number;
     porPagina: number;
 }
@@ -22,4 +28,5 @@ export interface SolicitudVacacionesRepository{
     actualizar(solicitud: SolicitudVacaciones): Promise<void>;
     listarPorEmpleado(filtro: FiltroHistorial): Promise<ResultadoPaginado <SolicitudVacaciones>>;
     listarPorEquipo(jefeDirectoId: string, desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>;
+    listarPorEstatus(filtro: FiltroPorEstatus): Promise<ResultadoPaginado<SolicitudVacaciones>>;
 }

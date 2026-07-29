@@ -8,6 +8,8 @@ export interface PeriodoSaldoResultado {
     diasPendientes: number;
     inicioValidez: Date;
     fechaVencimiento: Date;
+    finValidez: Date;
+    fechaLimiteDisfrute: Date;
 }
 
 export interface PerfilEmpleadoResultado {
@@ -22,6 +24,7 @@ export interface PerfilEmpleadoResultado {
     saldos: PeriodoSaldoResultado[];
     totalPendientes: number;
     totalDisfrutados: number;
+    backupNombre: string | null;
 }
 
 export class ObtenerPerfilEmpleado {
@@ -55,16 +58,20 @@ export class ObtenerPerfilEmpleado {
             departamento: empleado.departamento,
             correoPersonal: empleado.correoPersonal,
             jefeDirecto,
+            backupNombre: empleado.backupNombre,
             esJefe: equipoDirecto.length > 0,
             saldos: saldosOrdenados.map((s) => ({
                 diasPorLey: s.diasPorLey,
                 diasDisfrutados: s.diasDisfrutados,
                 diasPendientes: s.diasPendientes,
                 inicioValidez: s.inicioValidez,
+                finValidez: s.finValidez,
                 fechaVencimiento: s.fechaVencimiento,
+                fechaLimiteDisfrute: s.fechaLimiteDisfrute
             })),
             totalPendientes: saldos.reduce((acc, s) => acc + s.diasPendientes, 0),
             totalDisfrutados: saldos.reduce((acc, s) => acc + s.diasDisfrutados, 0),
+    
         };
     }
 }
