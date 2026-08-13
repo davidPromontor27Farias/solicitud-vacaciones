@@ -2,8 +2,6 @@ import { EmpleadoRepository } from "../../domain/repositories/EmpleadoRepository
 import { SaldoVacacionesRepository } from "../../domain/repositories/SaldoVacacionesRepository";
 import { NotFoundError } from "../../shared/errors";
 
-const DIAS_UMBRAL_CRITICO = 30;
-
 export interface SaldoDetalleResultado {
     id: string;
     diasPorLey: number;
@@ -62,7 +60,7 @@ export class ObtenerDetalleEmpleadoAdmin {
                 const diasParaVencer = saldo.diasPorVencer(fechaReferencia);
                 const estado: SaldoDetalleResultado['estado'] = saldo.estaVencido(fechaReferencia)
                     ? 'vencido'
-                    : diasParaVencer <= DIAS_UMBRAL_CRITICO
+                    : saldo.estaCritico(fechaReferencia)
                         ? 'critico'
                         : 'vigente';
                 return {

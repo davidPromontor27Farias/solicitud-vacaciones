@@ -1,7 +1,24 @@
+import { LOGO_CID, LOGO_BASE64 } from './logo';
+
+export interface AdjuntoCorreo {
+    filename: string;
+    content: Buffer;
+    cid: string;
+    contentType: string;
+}
+
+const ADJUNTOS_LOGO: AdjuntoCorreo[] = [{
+    filename: 'logo.png',
+    content: Buffer.from(LOGO_BASE64, 'base64'),
+    cid: LOGO_CID,
+    contentType: 'image/png',
+}];
+
 interface CorreoRenderizado {
     subject: string;
     text: string;
     html: string;
+    attachments: AdjuntoCorreo[];
 }
 
 function escaparHtml(valor: string): string {
@@ -22,8 +39,15 @@ function envolverPlantilla(contenido: string): string {
         <td align="center">
           <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);max-width:100%;">
             <tr>
-              <td style="background-color:#4338ca;padding:20px 32px;">
-                <span style="color:#ffffff;font-size:18px;font-weight:600;">Vacaciones Imperquimia</span>
+              <td style="background-color:#4a8b2c;padding:16px 32px;">
+                <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+                  <td style="vertical-align:middle;padding-right:10px;">
+                    <img src="cid:${LOGO_CID}" alt="Imperquimia" width="36" height="36" style="display:block;border-radius:6px;" />
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <span style="color:#ffffff;font-size:18px;font-weight:600;">Vacaciones Imperquimia</span>
+                  </td>
+                </tr></table>
               </td>
             </tr>
             <tr>
@@ -56,6 +80,11 @@ function tabla(filas: string): string {
 }
 
 export function construirCorreo(tipo: string, datos: Record<string, string>): CorreoRenderizado {
+    const { subject, text, html } = construirContenido(tipo, datos);
+    return { subject, text, html, attachments: ADJUNTOS_LOGO };
+}
+
+function construirContenido(tipo: string, datos: Record<string, string>): Omit<CorreoRenderizado, 'attachments'> {
     switch (tipo) {
         case 'activacion_cuenta': {
             const nombre = datos.nombre ?? '';
@@ -67,7 +96,7 @@ export function construirCorreo(tipo: string, datos: Record<string, string>): Co
                     <p style="margin:0 0 16px;">Hola <strong>${escaparHtml(nombre)}</strong>,</p>
                     <p style="margin:0 0 24px;">Usa el siguiente código para activar tu cuenta y crear tu contraseña:</p>
                     <p style="margin:0 0 24px;text-align:center;">
-                        <span style="display:inline-block;background-color:#eef2ff;color:#4338ca;font-size:28px;font-weight:700;letter-spacing:8px;padding:12px 20px;border-radius:8px;">${codigo}</span>
+                        <span style="display:inline-block;background-color:#eaf3e4;color:#4a8b2c;font-size:28px;font-weight:700;letter-spacing:8px;padding:12px 20px;border-radius:8px;">${codigo}</span>
                     </p>
                     <p style="margin:0;color:#6b7280;font-size:13px;">Este código expira en 24 horas. Si tú no solicitaste esto, ignora este correo.</p>
                 `),
@@ -84,7 +113,7 @@ export function construirCorreo(tipo: string, datos: Record<string, string>): Co
                     <p style="margin:0 0 16px;">Hola <strong>${escaparHtml(nombre)}</strong>,</p>
                     <p style="margin:0 0 24px;">Recibimos una solicitud para restablecer tu contraseña. Usa este código:</p>
                     <p style="margin:0 0 24px;text-align:center;">
-                        <span style="display:inline-block;background-color:#eef2ff;color:#4338ca;font-size:28px;font-weight:700;letter-spacing:8px;padding:12px 20px;border-radius:8px;">${codigo}</span>
+                        <span style="display:inline-block;background-color:#eaf3e4;color:#4a8b2c;font-size:28px;font-weight:700;letter-spacing:8px;padding:12px 20px;border-radius:8px;">${codigo}</span>
                     </p>
                     <p style="margin:0;color:#6b7280;font-size:13px;">Este código expira en 1 hora. Si tú no solicitaste esto, ignora este correo — tu contraseña actual seguirá funcionando.</p>
                 `),
@@ -95,18 +124,20 @@ export function construirCorreo(tipo: string, datos: Record<string, string>): Co
             const empleado = datos.empleado ?? '';
             const dias = datos.dias ?? '';
             const primerDia = datos.primerDia ?? '';
+            const ultimoDia = datos.ultimoDia ?? primerDia;
             return {
                 subject: 'Nueva solicitud de vacaciones para tu aprobación',
-                text: `${empleado} solicitó ${dias} día(s) de vacaciones a partir del ${primerDia}. Ingresa a la app para aprobar o rechazar.`,
+                text: `${empleado} solicitó ${dias} día(s) de vacaciones, del ${primerDia} al ${ultimoDia}. Ingresa a la app para aprobar o rechazar.`,
                 html: envolverPlantilla(`
                     <p style="margin:0 0 16px;">Tienes una nueva solicitud de vacaciones pendiente de revisión:</p>
                     ${tabla(
                         filaTabla('Empleado', escaparHtml(empleado)) +
                         filaTabla('Días solicitados', dias) +
-                        filaTabla('A partir de', primerDia)
+                        filaTabla('A partir de', primerDia) +
+                        filaTabla('Hasta', ultimoDia)
                     )}
                     <p style="margin:0;">
-                        <a href="${process.env.APP_URL ?? ''}/revisar/${datos.enlaceToken ?? ''}" style="display:inline-block;background-color:#4338ca;color:#ffffff;text-decoration:none;padding:10px 22px;border-radius:6px;font-weight:600;">Revisar solicitud</a>
+                        <a href="${process.env.APP_URL ?? ''}/revisar/${datos.enlaceToken ?? ''}" style="display:inline-block;background-color:#4a8b2c;color:#ffffff;text-decoration:none;padding:10px 22px;border-radius:6px;font-weight:600;">Revisar solicitud</a>
                     </p>
                 `),
             };

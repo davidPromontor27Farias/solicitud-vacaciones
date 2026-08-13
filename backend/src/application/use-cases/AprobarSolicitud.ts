@@ -6,11 +6,12 @@ import { SolicitudVacacionesRepository } from "../../domain/repositories/Solicit
 import { SolicitudVacaciones } from "../../domain/entities/SolicitudVacaciones";
 import { EmailNotifier } from "../ports/EmailNotifier";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../shared/errors";
+import { dividirNombres } from "../../shared/texto";
 
 export interface AprobarSolicitudInput {
     solicitudId: string;
     aprobadorId: string;
-
+    backupSeleccionado?: string;
 }
 
 export class AprobarSolicitud {
@@ -35,6 +36,18 @@ export class AprobarSolicitud {
 
         if (empleado.jefeDirectoId !== input.aprobadorId) {
             throw new UnauthorizedError('No tienes permiso para aprobar esta solicitud');
+        }
+
+        const opcionesBackup = dividirNombres(solicitud.backupNombre ?? '');
+        if (opcionesBackup.length > 1) {
+            if (!input.backupSeleccionado?.trim()) {
+                throw new ValidationError('Selecciona quién cubrirá al empleado');
+            }
+            try {
+                solicitud.seleccionarBackup(input.backupSeleccionado.trim());
+            } catch (error) {
+                throw new ValidationError(error instanceof Error ? error.message : 'Backup seleccionado inválido');
+            }
         }
 
         const dias = solicitud.dias;
@@ -89,7 +102,7 @@ export class AprobarSolicitud {
 
         if (empleado.recibeNotificacionesMatricial && empleado.jefeMatricialId) {
             const jefeMatricial = await this.empleadoRepo.buscarPorId(empleado.jefeMatricialId);
-            if (jefeMatricial?.correoPersonal) {
+            if (jefeMatricial?.correoParaSolicitudes) {
 
                 const enlaceToken = this.enlaceGenerator.generar({
                     solicitudId: solicitud.id,
@@ -98,7 +111,7 @@ export class AprobarSolicitud {
 
                 await this.emailNotifier.encolar({
                     tipo: 'aprobacion_jefe_matricial',
-                    destinatario: jefeMatricial.correoPersonal,
+                    destinatario: jefeMatricial.correoParaSolicitudes,
                     solicitudId: solicitud.id,
                     datos: { empleado: empleado.nombre, dias: String(solicitud.cantidadDias), enlaceToken },
                 });

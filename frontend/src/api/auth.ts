@@ -19,10 +19,10 @@ export function registrarCorreo(numeroEmpleado: string, correo: string): Promise
     });
 }
 
-export function crearPassword(token: string, password: string): Promise<{ ok: true }> {
+export function crearPassword(numeroEmpleado: string, token: string, password: string): Promise<{ ok: true }> {
     return apiFetch('/auth/crear-password', {
         method: 'POST',
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify({ numeroEmpleado, token, password }),
     });
 }
 

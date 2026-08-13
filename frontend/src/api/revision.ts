@@ -18,9 +18,10 @@ export function obtenerDetalleRevision(token: string): Promise<DetalleRevision> 
     return apiFetch(`/revision/${token}`);
 }
 
-export function aprobarPorEnlace(token: string): Promise<{ id: string; estatus: string }> {
+export function aprobarPorEnlace(token: string, backupSeleccionado?: string): Promise<{ id: string; estatus: string }> {
     return apiFetch(`/revision/${token}/aprobar`, {
         method: 'POST',
+        body: JSON.stringify({ backupSeleccionado }),
     });
 }
 

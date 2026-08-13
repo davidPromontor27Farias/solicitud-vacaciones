@@ -23,7 +23,14 @@ import { obtenerPerfil, type PerfilEmpleado } from '../api/empleados';
 import { ApiError } from '../api/client';
 import { SelectorDias } from '../components/SelectorDias';
 import { formatearDiasComoRangos, formatearFecha } from '../utils/fechas';
+import { dividirNombres } from '../utils/texto';
 
+
+const ESTADO_SALDO_ESTILOS: Record<string, { bg: string; text: string; label: string }> = {
+  disponible: { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: 'Disponible' },
+  proximo: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', label: 'Próximo a liberar' },
+  vencido: { bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: 'Vencido' },
+};
 
 const ESTATUS_ESTILOS: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
   pendiente: {
@@ -70,7 +77,6 @@ export function DashboardPage() {
   const [errorForm, setErrorForm] = useState<string | null>(null);
   const [exitoForm, setExitoForm] = useState<string |null>(null);
   const [enviando, setEnviando] = useState(false);
-  const [backupNombre, setBackupNombre] = useState('');
 
 
   async function cargarPerfil() {
@@ -79,7 +85,6 @@ export function DashboardPage() {
     try {
       const p = await obtenerPerfil();
       setPerfil(p);
-      setBackupNombre((actual) => actual || p.backupNombre || '');
     } catch (err) {
       setErrorPerfil(err instanceof ApiError ? err.message : 'Error inesperado');
     } finally {
@@ -127,13 +132,9 @@ export function DashboardPage() {
       setErrorForm('Selecciona al menos un día en el calendario');
       return;
     }
-    if (!backupNombre.trim()) {
-      setErrorForm('Indica quién cubrirá tu ausencia');
-      return;
-    }
     setEnviando(true);
     try {
-      await crearSolicitud(diasSeleccionados, backupNombre.trim());
+      await crearSolicitud(diasSeleccionados);
       setDiasSeleccionados([]);
       await Promise.all([cargarHistorial(), cargarPerfil()]);
       setExitoForm('Solicitud enviada correctamente');
@@ -259,27 +260,34 @@ export function DashboardPage() {
                     <table className="w-full text-sm">
                         <thead>
                         <tr className="text-gray-500 text-xs">
+                            <th className="font-medium py-2 pr-4 text-left">Periodo</th>
                             <th className="font-medium py-2 pr-4 text-left">Días por ley</th>
                             <th className="font-medium py-2 pr-4 text-left">Disfrutados</th>
                             <th className="font-medium py-2 pr-4 text-left">Pendientes</th>
                             <th className="font-medium py-2 pr-4 text-left">Disponible desde</th>
-                            <th className="font-medium py-2 pr-4 text-left">Fin de validez</th>
-                            <th className="font-medium py-2 pr-4 text-left">Vencen</th>
-                            <th className="font-medium py-2 text-left">Fecha límite</th>
+                            <th className="font-medium py-2 pr-4 text-left">Fecha límite</th>
+                            <th className="font-medium py-2 text-left">Estado</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {perfil.saldos.map((s, i) => (
+                        {perfil.saldos.map((s, i) => {
+                            const estadoEstilo = ESTADO_SALDO_ESTILOS[s.estado];
+                            return (
                             <tr key={i} className="border-t border-gray-50 hover:bg-gray-50 transition-colors">
+                            <td className="py-2 pr-4 text-gray-600">{s.anioInicio}-{s.anioFin}</td>
                             <td className="py-2 pr-4 font-medium">{s.diasPorLey}</td>
                             <td className="py-2 pr-4 text-gray-600">{s.diasDisfrutados}</td>
                             <td className="py-2 pr-4 text-[#4a8b2c] font-medium">{s.diasPendientes}</td>
                             <td className="py-2 pr-4 text-gray-600">{s.inicioValidez}</td>
-                            <td className="py-2 pr-4 text-gray-600">{formatearFecha(s.finValidez)}</td>
-                            <td className="py-2 pr-4 text-gray-600">{s.fechaVencimiento}</td>
-                            <td className="py-2 text-gray-600">{formatearFecha(s.fechaLimiteDisfrute)}</td>
+                            <td className="py-2 pr-4 text-gray-600">{formatearFecha(s.fechaLimiteDisfrute)}</td>
+                            <td className="py-2">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${estadoEstilo.bg} ${estadoEstilo.text}`}>
+                                {estadoEstilo.label}
+                                </span>
+                            </td>
                             </tr>
-                        ))}
+                            );
+                        })}
                         </tbody>
                     </table>
                     </div>
@@ -344,16 +352,6 @@ export function DashboardPage() {
                     <span>{errorForm}</span>
                     </div>
                 )}
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Backup (quién te cubrirá)</label>
-                    <input
-                        type="text"
-                        value={backupNombre}
-                        onChange={(e) => setBackupNombre(e.target.value)}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    />
-                </div>
 
                 <button
                     type="button"
@@ -422,10 +420,21 @@ export function DashboardPage() {
                 <div>
                   <p className="text-sm text-gray-900 font-medium">{formatearDiasComoRangos(s.dias)}</p>
                   {s.backupNombre && (
-                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                      <Users className="w-3 h-3" />
-                      Backup: {s.backupNombre}
-                    </p>
+                    <div className="text-xs text-gray-500 mt-1">
+                      <span className="flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        Backup:
+                      </span>
+                      {dividirNombres(s.backupNombre).length > 1 ? (
+                        <ul className="list-disc list-inside ml-4">
+                          {dividirNombres(s.backupNombre).map((nombre, idx) => (
+                            <li key={idx}>{nombre}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="ml-4">{s.backupNombre}</span>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${ESTATUS_ESTILOS[s.estatus].bg}`}>

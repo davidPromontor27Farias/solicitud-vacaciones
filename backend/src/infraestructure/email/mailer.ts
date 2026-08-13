@@ -1,11 +1,19 @@
 import nodemailer from 'nodemailer';
 
+interface AdjuntoCorreo {
+    filename: string;
+    content: Buffer;
+    cid: string;
+    contentType: string;
+}
+
 interface ParametrosCorreo {
     from: string;
     to: string;
     subject: string;
     text: string;
     html: string;
+    attachments?: AdjuntoCorreo[];
 }
 
 const smtpTransporter = process.env.EMAIL_PROVIDER === 'smtp'
@@ -29,8 +37,20 @@ async function enviarPorResend(params: ParametrosCorreo): Promise<void>{
         headers: {
             Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
             'Content-type': 'application/json',
-        }, 
-        body: JSON.stringify(params)
+        },
+        body: JSON.stringify({
+            from: params.from,
+            to: params.to,
+            subject: params.subject,
+            text: params.text,
+            html: params.html,
+            attachments: params.attachments?.map((a) => ({
+                filename: a.filename,
+                content: a.content.toString('base64'),
+                content_id: a.cid,
+                content_type: a.contentType,
+            })),
+        })
     });
 
     if(!respuesta.ok){

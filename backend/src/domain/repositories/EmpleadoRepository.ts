@@ -3,10 +3,13 @@ import { Empleado } from "../entities/Empleado";
 export interface DatosEmpleadoImportacion {
     numeroEmpleado: string;
     nombre: string;
-    sociedad: string | null;
-    puesto: string | null;
-    departamento: string | null;
-    correoPersonal: string | null;
+    // Campos opcionales: si el import no los trae (undefined), no se tocan en un update.
+    // Pasar null los limpia explícitamente.
+    sociedad?: string | null;
+    puesto?: string | null;
+    departamento?: string | null;
+    correoPersonal?: string | null;
+    backupNombre?: string | null;
 }
 
 export interface EmpleadoRepository {
@@ -16,5 +19,8 @@ export interface EmpleadoRepository {
     guardar(empleado: Empleado): Promise<void>;
     listarTodos(): Promise<Empleado[]>
     upsertDesdeImportacion(datos: DatosEmpleadoImportacion): Promise<{ id: string; esNuevo: boolean }>;
-    actualizarJefes(numeroEmpleado: string, jefeDirectoId: string | null, jefeMatricialId: string | null): Promise<void>;
+    // undefined = no tocar ese campo (se dejó sin resolver, se preserva el vínculo previo).
+    actualizarJefes(numeroEmpleado: string, datos: { jefeDirectoId?: string | null; jefeMatricialId?: string | null }): Promise<void>;
+    actualizarCorreoPorNumeroEmpleado(numeroEmpleado: string, correo: string): Promise<boolean>;
+    actualizarCorreoAutorizacionPorNumeroEmpleado(numeroEmpleado: string, correo: string): Promise<boolean>;
 }

@@ -1,3 +1,5 @@
+import { dividirNombres } from '../../shared/texto';
+
 export type EstatusSolicitud = 'pendiente' | 'aprobada' | 'revocada' | 'rechazada';
 
 export interface SolicitudVacacionesProps{
@@ -32,6 +34,19 @@ export class SolicitudVacaciones {
 
         this.props.estatus = 'aprobada';
         this.props.resueltoAt = new Date();
+    }
+
+    seleccionarBackup(nombre: string): void {
+        if(this.props.estatus !== 'pendiente'){
+            throw new Error('Solo se puede definir el backup de solicitudes pendientes');
+        }
+
+        const opciones = dividirNombres(this.props.backupNombre ?? '');
+        if(opciones.length > 1 && !opciones.includes(nombre)){
+            throw new Error('El backup seleccionado no es una de las opciones registradas');
+        }
+
+        this.props.backupNombre = nombre;
     }
 
 

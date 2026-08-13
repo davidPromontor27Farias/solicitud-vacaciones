@@ -1,6 +1,6 @@
 import { Link, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 export function Layout() {
     const { cerrarSesion } = useAuth();

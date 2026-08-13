@@ -107,11 +107,23 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
     }
 
     async listarPorEstatus(filtro: FiltroPorEstatus): Promise<ResultadoPaginado<SolicitudVacaciones>> {
-        const skip = (filtro.pagina -  1) * filtro.porPagina;
+        const skip = (filtro.pagina - 1) * filtro.porPagina;
         const [rows, total] = await Promise.all([
             this.prisma.solicitudVacaciones.findMany({
-                where: {estatus: filtro.estatus}
-            })
-        ])
+                where: {estatus: filtro.estatus},
+                include: {diasSolicitados: {orderBy: {fecha: 'asc'}}},
+                orderBy: {createdAt: 'desc'},
+                skip,
+                take: filtro.porPagina,
+            }),
+            this.prisma.solicitudVacaciones.count({where: {estatus: filtro.estatus}}),
+        ]);
+
+        return {
+            datos: rows.map(toDomain),
+            total,
+            pagina: filtro.pagina,
+            porPagina: filtro.porPagina,
+        };
     }
 }

@@ -42,10 +42,12 @@ export function registerRevisionRoutes(app: FastifyInstance, deps: RevisionDeps)
     app.post('/revision/:token/aprobar', async (request) => {
         const { token } = request.params as { token: string };
         const payload = verificarToken(token);
+        const body = aprobarSolicitudSchema.parse(request.body ?? {});
 
         const solicitud = await aprobarSolicitud.ejecutar({
             solicitudId: payload.solicitudId,
-            aprobadorId: payload.jefeId
+            aprobadorId: payload.jefeId,
+            backupSeleccionado: body.backupSeleccionado,
         });
 
         return { id: solicitud.id, estatus: solicitud.estatus };

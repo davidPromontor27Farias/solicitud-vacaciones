@@ -14,6 +14,7 @@ import { CalendarioColisiones } from '../components/CalendarioColisiones';
 import { CalendarioEquipo } from '../components/CalendarioEquipo';
 import { PanelEquipoMes } from '../components/PanelEquipoMes';
 import { ArrowLeft } from 'lucide-react';
+import { dividirNombres } from '../utils/texto';
 
 const ESTATUS_ESTILOS: Record<string, string> = {
     pendiente: 'bg-yellow-100 text-yellow-800',
@@ -30,6 +31,7 @@ export function EquipoPage() {
     const [error, setError] = useState<string | null>(null);
     const [accionEnCurso, setAccionEnCurso] = useState<string | null>(null);
     const [mesActual, setMesActual] = useState<Date | null>(null);
+    const [backupSeleccionado, setBackupSeleccionado] = useState('');
 
     const seleccionadaId = searchParams.get('solicitud');
     const seleccionada = solicitudes.find((s) => s.id === seleccionadaId) ?? null;
@@ -39,6 +41,7 @@ export function EquipoPage() {
         if (!seleccionada) return;
         const primerDia = new Date(`${seleccionada.dias[0]}T00:00:00.000Z`);
         setMesActual(new Date(Date.UTC(primerDia.getUTCFullYear(), primerDia.getUTCMonth(), 1)));
+        setBackupSeleccionado('');
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [seleccionada?.id]);
 
@@ -68,10 +71,15 @@ export function EquipoPage() {
     }
 
     async function manejarAprobar(id: string) {
+        const opcionesBackup = seleccionada ? dividirNombres(seleccionada.backupNombre ?? '') : [];
+        if (opcionesBackup.length > 1 && !backupSeleccionado) {
+            setError('Selecciona quién cubrirá al empleado');
+            return;
+        }
         setAccionEnCurso(id);
         setError(null);
         try {
-            await aprobarSolicitud(id);
+            await aprobarSolicitud(id, opcionesBackup.length > 1 ? backupSeleccionado : undefined);
             await cargar();
         } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Error inesperado');
@@ -200,6 +208,41 @@ export function EquipoPage() {
                             <span className={`inline-block mt-1 text-xs font-medium px-2 py-1 rounded-full ${ESTATUS_ESTILOS[seleccionada.estatus]}`}>
                                 {seleccionada.estatus}
                             </span>
+                            {seleccionada.backupNombre && (() => {
+                                const opcionesBackup = dividirNombres(seleccionada.backupNombre!);
+                                if (seleccionada.estatus === 'pendiente' && opcionesBackup.length > 1) {
+                                    return (
+                                        <div className="mt-2">
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Backup: ¿quién cubrirá al empleado?
+                                            </label>
+                                            <select
+                                                value={backupSeleccionado}
+                                                onChange={(e) => setBackupSeleccionado(e.target.value)}
+                                                className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs"
+                                            >
+                                                <option value="">Selecciona una opción</option>
+                                                {opcionesBackup.map((nombre) => (
+                                                    <option key={nombre} value={nombre}>{nombre}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    );
+                                }
+                                if (opcionesBackup.length > 1) {
+                                    return (
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Backup:
+                                            <ul className="list-disc list-inside ml-4">
+                                                {opcionesBackup.map((nombre, idx) => (
+                                                    <li key={idx}>{nombre}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    );
+                                }
+                                return <p className="text-xs text-gray-500 mt-1">Backup: {seleccionada.backupNombre}</p>;
+                            })()}
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-4">

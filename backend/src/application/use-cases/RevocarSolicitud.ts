@@ -81,10 +81,10 @@ export class RevocarSolicitud {
         const otroJefeId = esDirectoQuienRevoco ? empleado.jefeMatricialId : empleado.jefeDirectoId;
         if (empleado.recibeNotificacionesMatricial && otroJefeId) {
             const otroJefe = await this.empleadoRepo.buscarPorId(otroJefeId);
-            if (otroJefe?.correoPersonal) {
+            if (otroJefe?.correoParaSolicitudes) {
                 await this.emailNotifier.encolar({
                     tipo: 'revocacion',
-                    destinatario: otroJefe.correoPersonal,
+                    destinatario: otroJefe.correoParaSolicitudes,
                     solicitudId: solicitud.id,
                     datos: { empleado: empleado.nombre, dias: String(solicitud.cantidadDias) },
                 });

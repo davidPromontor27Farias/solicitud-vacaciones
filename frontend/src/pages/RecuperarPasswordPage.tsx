@@ -43,7 +43,7 @@ export function RecuperarPasswordPage() {
 
         setCargando(true);
         try {
-            await crearPassword(token.trim(), password);
+            await crearPassword(numeroEmpleado.trim(), token.trim(), password);
             navigate('/login');
         } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Error inesperado');

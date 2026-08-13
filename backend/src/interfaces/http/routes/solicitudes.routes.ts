@@ -46,7 +46,7 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
         const empleadoId = (request.user as { sub: string }).sub;
         const dias = body.dias.map((d) => new Date(`${d}T00:00:00.000Z`));
 
-        const solicitud = await crearSolicitud.ejecutar({ empleadoId, dias, backupNombre: body.backupNombre});
+        const solicitud = await crearSolicitud.ejecutar({ empleadoId, dias });
 
 
         reply.status(201).send({
@@ -63,7 +63,8 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
 
     const solicitud = await aprobarSolicitud.ejecutar({
         solicitudId: id,
-        aprobadorId
+        aprobadorId,
+        backupSeleccionado: body.backupSeleccionado,
     });
 
         reply.send({ id: solicitud.id, estatus: solicitud.estatus, backupNombre: solicitud.backupNombre });
@@ -140,6 +141,7 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
         empleadoNombre: nombrePorEmpleadoId.get(s.empleadoId) ?? null,
         estatus: s.estatus,
         dias: s.dias.map((d) => d.toISOString().slice(0, 10)),
+        backupNombre: s.backupNombre,
         })));
     });
 
@@ -171,6 +173,7 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
             empleadoNombre: nombrePorEmpleadoId.get(s.empleadoId) ?? null,
             estatus: s.estatus,
             dias: s.dias.map((d) => d.toISOString().slice(0, 10)),
+            backupNombre: s.backupNombre,
         })));
     });
 

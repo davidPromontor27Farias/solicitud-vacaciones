@@ -12,7 +12,6 @@ import { NotFoundError, ValidationError } from "../../shared/errors";
 export interface CrearSolicitudVacacionesInput {
     empleadoId: string;
     dias: Date[];
-    backupNombre: string;
 }
 
 function inicioDelDiaUtc(fecha: Date): Date {
@@ -42,10 +41,6 @@ export class CrearSolicitudVacaciones {
             throw new ValidationError('No puedes solicitar días que ya pasaron');
         }
 
-        if(!input.backupNombre?.trim()){
-            throw new ValidationError('El nombre del backup es obligatorio');
-        }
-
         const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id)
 
         const diaSinSaldoVigente = rango.valores.find((dia) => !saldos.some((s) => s.estaVigente(dia)));
@@ -65,7 +60,7 @@ export class CrearSolicitudVacaciones {
             empleadoId: empleado.id,
             estatus: 'pendiente',
             dias: rango.valores,
-            backupNombre: input.backupNombre.trim(),
+            backupNombre: empleado.backupNombre,
             motivoRevocacion: null,
             revocadoPorId: null,
             createdAt: new Date(),
@@ -82,7 +77,7 @@ export class CrearSolicitudVacaciones {
         if (!empleado.jefeDirectoId) return;
 
         const jefe = await this.empleadoRepo.buscarPorId(empleado.jefeDirectoId);
-        if (!jefe?.correoPersonal) return;
+        if (!jefe?.correoParaSolicitudes) return;
 
         const enlaceToken = this.enlaceGenerator.generar({
             solicitudId: solicitud.id,
@@ -91,12 +86,13 @@ export class CrearSolicitudVacaciones {
 
         await this.emailNotifier.encolar({
             tipo: 'solicitud_creada',
-            destinatario: jefe.correoPersonal,
+            destinatario: jefe.correoParaSolicitudes,
             solicitudId: solicitud.id,
             datos: {
                 empleado: empleado.nombre,
                 dias: String(rango.cantidad),
                 primerDia: rango.primerDia.toISOString().slice(0, 10),
+                ultimoDia: rango.ultimoDia.toISOString().slice(0, 10),
                 enlaceToken,
             },
         });

@@ -10,6 +10,9 @@ export interface PeriodoSaldoResultado {
     fechaVencimiento: Date;
     finValidez: Date;
     fechaLimiteDisfrute: Date;
+    anioInicio: number;
+    anioFin: number;
+    estado: 'disponible' | 'proximo' | 'vencido';
 }
 
 export interface PerfilEmpleadoResultado {
@@ -48,6 +51,9 @@ export class ObtenerPerfilEmpleado {
         const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id);
         const saldosOrdenados = [...saldos].sort((a, b) => a.inicioValidez.getTime() - b.inicioValidez.getTime());
 
+        const hoy = new Date();
+        const saldosVigentes = saldos.filter((s) => s.estaVigente(hoy));
+
         const equipoDirecto = await this.empleadoRepo.listarEquipoDirecto(empleado.id);
 
         return {
@@ -67,9 +73,12 @@ export class ObtenerPerfilEmpleado {
                 inicioValidez: s.inicioValidez,
                 finValidez: s.finValidez,
                 fechaVencimiento: s.fechaVencimiento,
-                fechaLimiteDisfrute: s.fechaLimiteDisfrute
+                fechaLimiteDisfrute: s.fechaLimiteDisfrute,
+                anioInicio: s.inicioValidez.getFullYear(),
+                anioFin: s.finValidez.getFullYear(),
+                estado: s.estaVencido(hoy) ? 'vencido' : s.estaVigente(hoy) ? 'disponible' : 'proximo',
             })),
-            totalPendientes: saldos.reduce((acc, s) => acc + s.diasPendientes, 0),
+            totalPendientes: saldosVigentes.reduce((acc, s) => acc + s.diasPendientes, 0),
             totalDisfrutados: saldos.reduce((acc, s) => acc + s.diasDisfrutados, 0),
     
         };

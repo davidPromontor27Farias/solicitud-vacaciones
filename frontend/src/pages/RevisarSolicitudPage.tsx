@@ -4,6 +4,7 @@ import { aprobarPorEnlace, declinarPorEnlace, obtenerDetalleRevision, rechazarPo
 import { ApiError } from '../api/client';
 import { CalendarioColisiones } from '../components/CalendarioColisiones';
 import { PanelEquipoMes } from '../components/PanelEquipoMes';
+import { dividirNombres } from '../utils/texto';
 
 const ESTATUS_ESTILOS: Record<string, string> = {
     pendiente: 'bg-yellow-100 text-yellow-800',
@@ -25,6 +26,7 @@ export function RevisarSolicitudPage() {
     const [mostrandoAprobar, setMostrandoAprobar] = useState(false);
     const [motivoDeclinar, setMotivoDeclinar] = useState('');
     const [mostrandoDeclinar, setMostrandoDeclinar] = useState(false);
+    const [backupSeleccionado, setBackupSeleccionado] = useState('');
 
     async function cargar() {
         if (!token) return;
@@ -49,10 +51,15 @@ export function RevisarSolicitudPage() {
 
     async function manejarAprobar() {
         if (!token) return;
+        const opcionesBackup = detalle ? dividirNombres(detalle.backupNombre ?? '') : [];
+        if (opcionesBackup.length > 1 && !backupSeleccionado) {
+            setError('Selecciona quién cubrirá al empleado');
+            return;
+        }
         setEnviando(true);
         setError(null);
         try {
-            await aprobarPorEnlace(token);
+            await aprobarPorEnlace(token, opcionesBackup.length > 1 ? backupSeleccionado : undefined);
             setMensaje('Solicitud aprobada correctamente.');
             await cargar();
         } catch (err) {
@@ -129,9 +136,42 @@ export function RevisarSolicitudPage() {
                             <span className={`inline-block mt-1 text-xs font-medium px-2 py-1 rounded-full ${ESTATUS_ESTILOS[detalle.estatus]}`}>
                                 {detalle.estatus}
                             </span>
-                            {detalle.backupNombre && (
-                                <p className="text-xs text-gray-500 mt-1">Backup: {detalle.backupNombre}</p>
-                            )}
+                            {detalle.backupNombre && (() => {
+                                const opcionesBackup = dividirNombres(detalle.backupNombre!);
+                                const puedeElegir = detalle.estatus === 'pendiente' && detalle.esJefeDirecto;
+                                if (opcionesBackup.length > 1 && puedeElegir) {
+                                    return (
+                                        <div className="mt-1">
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Backup: ¿quién cubrirá al empleado?
+                                            </label>
+                                            <select
+                                                value={backupSeleccionado}
+                                                onChange={(e) => setBackupSeleccionado(e.target.value)}
+                                                className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs"
+                                            >
+                                                <option value="">Selecciona una opción</option>
+                                                {opcionesBackup.map((nombre) => (
+                                                    <option key={nombre} value={nombre}>{nombre}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    );
+                                }
+                                if (opcionesBackup.length > 1) {
+                                    return (
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Backup:
+                                            <ul className="list-disc list-inside ml-4">
+                                                {opcionesBackup.map((nombre, idx) => (
+                                                    <li key={idx}>{nombre}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    );
+                                }
+                                return <p className="text-xs text-gray-500 mt-1">Backup: {detalle.backupNombre}</p>;
+                            })()}
                         </div>
 
                         <CalendarioColisiones

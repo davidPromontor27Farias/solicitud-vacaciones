@@ -44,7 +44,7 @@ export function ActivarCuentaPage() {
 
         setCargando(true);
         try {
-            await crearPassword(token.trim(), password);
+            await crearPassword(numeroEmpleado, token.trim(), password);
             navigate('/login', {
                 state: { mensajeExito: 'Tu cuenta se creó correctamente. Inicia sesión con tu nueva contraseña.' },
             });

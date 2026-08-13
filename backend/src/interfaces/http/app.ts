@@ -6,6 +6,7 @@ import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
+import multipart from '@fastify/multipart';
 import { ZodError } from 'zod';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { logger } from '../../shared/logger';
@@ -16,13 +17,15 @@ import { PrismaTokenActivacionRepository } from '../../infraestructure/database/
 import { BcryptPasswordHasher } from '../../infraestructure/auth/BcryptPasswordHasher';
 import { CryptoIdGenerator } from '../../infraestructure/auth/CryptoIdGenerator';
 import { JwtEnlaceRevisionGenerator } from '../../infraestructure/auth/JwtEnlaceRevisionGenerator';
-import { BullMQEmailNotifier } from '../../infraestructure/email/BullMQEmailNotifier';
+import { DirectEmailNotifier } from '../../infraestructure/email/DirectEmailNotifier';
 import { registerSolicitudesRoutes } from './routes/solicitudes.routes';
 import { registerEmpleadosRoutes } from './routes/empleados.routes';
 import { registerRevisionRoutes } from './routes/revision.routes';
 import { PrismaSaldoVacacionesRepository } from '../../infraestructure/database/repositories/PrismaSaldoVacacionesRepository';
 import { PrismaSolicitudVacacionesRepository } from '../../infraestructure/database/repositories/PrismaSolicitudVacacionesRepository';
 import { PrismaAdminRepository } from '../../infraestructure/database/repositories/PrismaAdminRepository';
+import { PrismaImportacionNominaRepository } from '../../infraestructure/database/repositories/PrismaImportacionNominaRepository';
+import { PrismaImportacionCorreosJefesRepository } from '../../infraestructure/database/repositories/PrismaImportacionCorreosJefesRepository';
 import { registerAdminRoutes } from './routes/admin.routes';
 
 export function buildApp(prisma: PrismaClient): FastifyInstance {
@@ -46,6 +49,7 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
 
     app.register(jwt, {secret: process.env.JWT_SECRET!});
     app.register(rateLimit, {max: 100, timeWindow: '1 minute'});
+    app.register(multipart, {limits: {fileSize: 5 * 1024 * 1024}});
 
     app.setErrorHandler((error, _request, reply) => {
         if (error instanceof AppError) {
@@ -66,10 +70,12 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
     const adminRepo = new PrismaAdminRepository(prisma);
     const saldoRepo = new PrismaSaldoVacacionesRepository(prisma);
     const solicitudRepo = new PrismaSolicitudVacacionesRepository(prisma);
+    const importacionNominaRepo = new PrismaImportacionNominaRepository(prisma);
+    const importacionCorreosRepo = new PrismaImportacionCorreosJefesRepository(prisma);
     const tokenRepo = new PrismaTokenActivacionRepository(prisma);
     const passwordHasher = new BcryptPasswordHasher();
     const idGenerator = new CryptoIdGenerator();
-    const emailNotifier = new BullMQEmailNotifier(prisma);
+    const emailNotifier = new DirectEmailNotifier(prisma);
     const enlaceGenerator = new JwtEnlaceRevisionGenerator(process.env.JWT_SECRET!);
 
     app.register(async (api) => {
@@ -77,7 +83,7 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
         registerSolicitudesRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, idGenerator, enlaceGenerator });
         registerEmpleadosRoutes(api, { empleadoRepo, saldoRepo });
         registerRevisionRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, enlaceGenerator });
-        registerAdminRoutes(api, {adminRepo, empleadoRepo, saldoRepo, passwordHasher})
+        registerAdminRoutes(api, {adminRepo, empleadoRepo, saldoRepo, solicitudRepo, importacionNominaRepo, importacionCorreosRepo, passwordHasher, idGenerator})
     }, { prefix: '/api' });
 
     // En producción, la imagen de Docker copia el build del frontend a ./public

@@ -2,7 +2,6 @@ import { EmpleadoRepository } from "../../domain/repositories/EmpleadoRepository
 import { SaldoVacacionesRepository } from "../../domain/repositories/SaldoVacacionesRepository";
 
 
-const DIAS_UMBRALCRITICO = 30;
 const SIN_DEPARTAMENTO = 'Sin departamento';
 
 export interface VacacionCriticasResultado {
@@ -36,7 +35,7 @@ export class ListarVacacionesCriticas {
 
         for(const saldo of saldos){
             const diasParaVencer = saldo.diasPorVencer(fechaReferencia);
-            if(diasParaVencer > DIAS_UMBRALCRITICO) continue;
+            if(!saldo.estaVencido(fechaReferencia) && !saldo.estaCritico(fechaReferencia)) continue;
 
             const empleado = empleadosPorId.get(saldo.empleadoId);
             if(!empleado) continue;

@@ -12,6 +12,8 @@ export interface SaldoVacacionesProps {
     fechaLimiteDisfrute: Date;
 }
 
+export const DIAS_UMBRAL_CRITICO = 30;
+
 export class SaldoVacaciones {
     constructor(private props: SaldoVacacionesProps) {}
 
@@ -33,9 +35,13 @@ export class SaldoVacaciones {
         return Math.ceil((this.props.fechaLimiteDisfrute.getTime() - fecha.getTime()) /msPorDia);
     }
 
+    estaCritico(fecha: Date): boolean {
+        return !this.estaVencido(fecha) && this.diasPorVencer(fecha) <= DIAS_UMBRAL_CRITICO;
+    }
+
 
     estaVigente(fecha: Date): boolean {
-        return fecha >= this.props.inicioValidez && fecha <= this.props.fechaLimiteDisfrute;
+        return fecha >= this.props.finValidez && fecha <= this.props.fechaLimiteDisfrute;
     }
 
     tieneDiasSuficientes(cantidadDias: number): boolean{
@@ -55,12 +61,23 @@ export class SaldoVacaciones {
         this.props.diasDisfrutados -= cantidadDias;
     }
 
-    reconciliarDesdeSap(diasPorLey: number, diasDisfrutadosSap: number, fechaVencimiento: Date): void {
-        const diasDisfrutados = Math.max(this.props.diasDisfrutados, diasDisfrutadosSap);
-        this.props.diasPorLey = diasPorLey;
+    reconciliarDesdeSap(datos: {
+        diasPorLey: number;
+        diasDisfrutadosSap: number;
+        fechaVencimiento: Date;
+        finValidez: Date;
+        fechaLimiteDisfrute: Date;
+    }): void {
+        // El sistema puede haber descontado días (solicitudes aprobadas) que SAP todavía
+        // no refleja porque nómina no ha procesado esa liquidación: nunca se retrocede
+        // diasDisfrutados, solo se adopta el valor de SAP cuando este ya alcanzó o superó al local.
+        const diasDisfrutados = Math.max(this.props.diasDisfrutados, datos.diasDisfrutadosSap);
+        this.props.diasPorLey = datos.diasPorLey;
         this.props.diasDisfrutados = diasDisfrutados;
-        this.props.diasPendientes = Math.max(diasPorLey - diasDisfrutados, 0);
-        this.props.fechaVencimiento = fechaVencimiento;
+        this.props.diasPendientes = Math.max(datos.diasPorLey - diasDisfrutados, 0);
+        this.props.fechaVencimiento = datos.fechaVencimiento;
+        this.props.finValidez = datos.finValidez;
+        this.props.fechaLimiteDisfrute = datos.fechaLimiteDisfrute;
     }
 
     toProps(): SaldoVacacionesProps {

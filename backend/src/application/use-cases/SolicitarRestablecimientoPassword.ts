@@ -1,6 +1,5 @@
 import { EmpleadoRepository } from "../../domain/repositories/EmpleadoRepository";
 import { TokenActivacionRepository } from "../../domain/repositories/TokenActivacionRepository";
-import { ValidationError, NotFoundError } from "../../shared/errors";
 import { EmailNotifier } from "../ports/EmailNotifier";
 import { IdGenerator } from "../ports/IdGenerator";
 
@@ -20,12 +19,10 @@ export class SolicitarRestablecimientoPassword {
 
     async ejecutar(input: SolicitarRestablecimientoPasswordInput): Promise<void> {
         const empleado = await this.empleadoRepo.buscarPorNumeroEmpleado(input.numeroEmpleado);
-        if (!empleado) {
-            throw new NotFoundError('Empleado no encontrado');
-        }
-
-        if (!empleado.correoPersonal) {
-            throw new ValidationError('Este empleado no ha activado su cuenta todavía. Usa la opción de activar cuenta.');
+        // No se revela si el número de empleado existe ni si ya activó su cuenta:
+        // la respuesta al cliente es la misma en todos los casos (evita enumeración de empleados).
+        if (!empleado || !empleado.correoPersonal) {
+            return;
         }
 
         const expiraAt = new Date();

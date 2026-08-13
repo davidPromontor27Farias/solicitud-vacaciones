@@ -12,6 +12,7 @@ export const registrarCorreoSchema = z.object({
 
 
 export const crearPasswordSchema = z.object({
+    numeroEmpleado: z.string().min(1).max(20),
     token: z.string().min(1).max(20),
     password: z.string().min(8).max(128)
 });

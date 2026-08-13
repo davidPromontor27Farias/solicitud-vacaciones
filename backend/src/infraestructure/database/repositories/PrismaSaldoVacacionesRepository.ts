@@ -68,7 +68,13 @@ export class PrismaSaldoVacacionesRepository implements SaldoVacacionesRepositor
                 diasDisfrutados: props.diasDisfrutados,
                 diasPendientes: props.diasPendientes,
                 fechaVencimiento: props.fechaVencimiento,
+                finValidez: props.finValidez,
+                fechaLimiteDisfrute: props.fechaLimiteDisfrute,
             },
         });
+    }
+
+    async eliminar(id: string): Promise<void> {
+        await this.prisma.saldoVacaciones.delete({ where: { id } });
     }
 }

@@ -8,6 +8,9 @@ export interface PeriodoSaldo {
     finValidez: string;
     fechaVencimiento: string;
     fechaLimiteDisfrute: string;
+    anioInicio: number;
+    anioFin: number;
+    estado: 'disponible' | 'proximo' | 'vencido';
 }
 
 export interface PerfilEmpleado {

@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { useAdminAuth } from '../context/AdminAuthContext';
-import { ShieldAlert, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 export function AdminLayout() {
     const { admin, cerrarSesion } = useAdminAuth();

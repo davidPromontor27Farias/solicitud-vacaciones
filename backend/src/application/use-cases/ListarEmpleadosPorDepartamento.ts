@@ -36,12 +36,14 @@ export class ListarEmpleadosPorDepartamento{
             }
 
             const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id);
+            const hoy = new Date();
+            const saldosVigentes = saldos.filter((s) => s.estaVigente(hoy));
             resultado.push({
                 numeroEmpleado: empleado.numeroEmpleado,
                 nombre: empleado.nombre,
                 puesto: empleado.puesto,
                 jefeDirecto,
-                totalPendientes: saldos.reduce((acc, s) => acc + s.diasPendientes, 0),
+                totalPendientes: saldosVigentes.reduce((acc, s) => acc + s.diasPendientes, 0),
                 totalDisfrutados: saldos.reduce((acc, s) => acc + s.diasDisfrutados, 0)
             })
         }
