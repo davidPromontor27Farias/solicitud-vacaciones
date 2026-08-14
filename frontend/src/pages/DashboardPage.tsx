@@ -264,7 +264,7 @@ export function DashboardPage() {
                             <th className="font-medium py-2 pr-4 text-left">Días por ley</th>
                             <th className="font-medium py-2 pr-4 text-left">Disfrutados</th>
                             <th className="font-medium py-2 pr-4 text-left">Pendientes</th>
-                            <th className="font-medium py-2 pr-4 text-left">Disponible desde</th>
+                            <th className="font-medium py-2 pr-4 text-left">Tomar a partir de:</th>
                             <th className="font-medium py-2 pr-4 text-left">Fecha límite</th>
                             <th className="font-medium py-2 text-left">Estado</th>
                         </tr>
@@ -278,7 +278,7 @@ export function DashboardPage() {
                             <td className="py-2 pr-4 font-medium">{s.diasPorLey}</td>
                             <td className="py-2 pr-4 text-gray-600">{s.diasDisfrutados}</td>
                             <td className="py-2 pr-4 text-[#4a8b2c] font-medium">{s.diasPendientes}</td>
-                            <td className="py-2 pr-4 text-gray-600">{s.inicioValidez}</td>
+                            <td className="py-2 pr-4 text-gray-600">{s.finValidez}</td>
                             <td className="py-2 pr-4 text-gray-600">{formatearFecha(s.fechaLimiteDisfrute)}</td>
                             <td className="py-2">
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${estadoEstilo.bg} ${estadoEstilo.text}`}>
