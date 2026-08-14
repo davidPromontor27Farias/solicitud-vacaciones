@@ -19,7 +19,7 @@ import { ImportacionNominaRepository } from "../../../domain/repositories/Import
 import { ImportacionCorreosJefesRepository } from "../../../domain/repositories/ImportacionCorreosJefesRepository";
 import { authenticateAdmin } from "../middlewares/authenticateAdmin";
 import { authenticateAdminNominas } from "../middlewares/authenticateAdminNominas";
-import { adminLoginSchema, solicitudesPorEstatusQuerySchema } from "../schemas/admin.schemas";
+import { adminLoginSchema, solicitudesPorEstatusQuerySchema, reporteSolicitudesQuerySchema } from "../schemas/admin.schemas";
 import { ValidationError } from "../../../shared/errors";
 
 
@@ -116,8 +116,8 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminDeps): void
     });
 
     app.get('/admin/nomina/reportes/solicitudes', { preHandler: authenticateAdminNominas }, async (request, reply) => {
-        const query = solicitudesPorEstatusQuerySchema.parse({ ...(request.query as object), porPagina: 10000 });
-        const resultado = await listarSolicitudesPorEstatus.ejecutar(query);
+        const { estatus, porPagina } = reporteSolicitudesQuerySchema.parse(request.query);
+        const resultado = await listarSolicitudesPorEstatus.ejecutar({ estatus, pagina: 1, porPagina });
 
         const filas = resultado.datos.map((s) => ({
             'Número de empleado': s.numeroEmpleado,
@@ -138,7 +138,7 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminDeps): void
 
         reply
             .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            .header('Content-Disposition', `attachment; filename="solicitudes_${query.estatus}.xlsx"`)
+            .header('Content-Disposition', `attachment; filename="solicitudes_${estatus}.xlsx"`)
             .send(buffer);
     });
 
