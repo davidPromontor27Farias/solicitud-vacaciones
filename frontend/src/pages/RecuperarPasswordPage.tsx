@@ -53,14 +53,14 @@ export function RecuperarPasswordPage() {
     }
 
     return (
-        <div className="min-h-screen relative flex items-center justify-center bg-gray-50">
+        <div className="min-h-screen relative flex items-center justify-center bg-gray-50 p-4">
             <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                 style={{ backgroundImage: `url('/walppaper.jpg')` }}
             />
             <div className="absolute inset-0 bg-black/50" />
 
-            <div className="relative z-10 w-full max-w-sm bg-white/50 backdrop-blur-sm p-8 rounded-lg shadow-lg border border-white/20">
+            <div className="relative z-10 w-full max-w-sm bg-white/50 backdrop-blur-sm p-6 sm:p-8 rounded-lg shadow-lg border border-white/20">
                 <div className="w-full flex flex-col justify-center items-center mb-10">
                     <img className="w-40" src="/iconIQ.png" />
                     <h1 className="text-xl font-semibold text-gray-900 mb-2">Recuperar contraseña</h1>

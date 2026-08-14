@@ -58,15 +58,15 @@ export function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen relative flex items-center justify-center bg-gray-50">
+        <div className="min-h-screen relative flex items-center justify-center bg-gray-50 p-4">
             {/* Imagen de fondo */}
-            <div 
+            <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                 style={{
                     backgroundImage: `url('/walppaper.jpg')`, // Reemplaza 'tu-imagen.jpg' con el nombre de tu archivo
                 }}
             />
-            
+
             {/* Capa de sombra/overlay */}
             <div className="absolute inset-0 bg-black/50" />
 
@@ -80,7 +80,7 @@ export function LoginPage() {
             </div>
 
             {/* Contenido del formulario */}
-            <div className="relative z-10 w-full max-w-sm bg-white/50 backdrop-blur-sm p-8 rounded-lg shadow-lg border border-white/20">
+            <div className="relative z-10 w-full max-w-sm bg-white/50 backdrop-blur-sm p-6 sm:p-8 rounded-lg shadow-lg border border-white/20">
                 <div className='w-full flex flex-col justify-center items-center'>
                     <img  className='w-40' src="/iconIQ.png"/>
                     <h1 className="text-2xl font-bold text-gray-900 mb-6 ">Solicitud de Vacaciones</h1>

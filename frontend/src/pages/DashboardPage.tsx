@@ -169,8 +169,8 @@ export function DashboardPage() {
       {tabActivo === 'informacion' && (
         <div className='spcae-y-6 transition-opacity duration-300 starting:opacity-0'>
             {/* Perfil Header */}
-            <section className="bg-gradient-to-right from-[#4a8b2c] to-[#ee7624] p-8 rounded-2xl shadow-lg text-white">
-                <div className="flex items-center justify-between">
+            <section className="bg-gradient-to-right from-[#4a8b2c] to-[#ee7624] p-5 sm:p-8 rounded-2xl shadow-lg text-white">
+                <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4">
                     <div className="bg-white/20 p-4 rounded-full">
                     <User className="w-12 h-12" />
