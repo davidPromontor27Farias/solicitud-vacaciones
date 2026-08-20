@@ -9,6 +9,7 @@ export interface VacacionCriticasResultado {
     numeroEmpleado: string;
     nombre: string;
     departamento: string;
+    sociedad: string | null;
     puesto: string | null;
     jefeDirecto: {nombre: string} | null;
     saldoId: string;
@@ -47,6 +48,7 @@ export class ListarVacacionesCriticas {
                 numeroEmpleado: empleado.numeroEmpleado,
                 nombre: empleado.nombre,
                 departamento: empleado.departamento?.trim() || SIN_DEPARTAMENTO,
+                sociedad: empleado.sociedad,
                 puesto: empleado.puesto,
                 jefeDirecto: jefe ? {nombre: jefe.nombre} : null,
                 saldoId: saldo.id,

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { obtenerVacacionesCriticas, obtenerDetalleEmpleado, type VacacionCritica, type DetalleEmpleadoAdmin } from '../api/admin';
 import { ApiError } from '../api/client';
-import { useAdminAuth } from '../context/AdminAuthContext';
 import {
     AlertTriangle,
     Clock,
@@ -12,16 +12,19 @@ import {
     RefreshCw,
     AlertCircle,
     ShieldCheck,
-    ShieldAlert,
     ChevronLeft,
     ChevronRight,
     Users,
     Mail,
+    LayoutGrid,
+    List,
 } from 'lucide-react';
 
 const TARJETAS_POR_PAGINA = 6;
 
 type Filtro = 'vencido' | 'critico';
+type ModoVista = 'tarjetas' | 'listado';
+type Seccion = 'dashboards' | 'registros';
 
 const GLASS = 'bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl';
 
@@ -74,12 +77,38 @@ interface TarjetaResumenProps {
 
 function TarjetaResumen({ icono, etiqueta, valor, texto }: TarjetaResumenProps) {
     return (
-        <div className={`${GLASS} p-5 rounded-2xl`}>
+        <div className={`${GLASS} p-8 rounded-2xl flex flex-col justify-center min-h-[160px]`}>
             <div className="flex items-center justify-between">
                 <span className="text-sm text-white/70">{etiqueta}</span>
                 {icono}
             </div>
-            <p className={`text-3xl font-bold mt-2 ${texto}`}>{valor}</p>
+            <p className={`text-4xl font-bold mt-3 ${texto}`}>{valor}</p>
+        </div>
+    );
+}
+
+function TarjetaTopDepartamento({ icono, etiqueta, resumen, texto }: {
+    icono: React.ReactNode;
+    etiqueta: string;
+    resumen: DepartamentoResumen | undefined;
+    texto: string;
+}) {
+    return (
+        <div className={`${GLASS} p-8 rounded-2xl flex flex-col justify-center min-h-[160px]`}>
+            <div className="flex items-center justify-between">
+                <span className="text-sm text-white/70">{etiqueta}</span>
+                {icono}
+            </div>
+            {resumen ? (
+                <>
+                    <p className="text-2xl font-bold text-white mt-3 truncate" title={resumen.departamento}>{resumen.departamento}</p>
+                    <p className={`text-sm font-medium mt-1 ${texto}`}>
+                        {resumen.totalDias} {resumen.totalDias === 1 ? 'día' : 'días'} · {resumen.empleados} {resumen.empleados === 1 ? 'empleado' : 'empleados'}
+                    </p>
+                </>
+            ) : (
+                <p className="text-sm text-white/50 mt-3">Sin registros</p>
+            )}
         </div>
     );
 }
@@ -390,17 +419,145 @@ function VistaDetalleEmpleado({ detalle, cargando, error, filtro, onVolver }: {
     );
 }
 
+function SeccionListado({ titulo, icono, items, esVencido, onSeleccionar }: {
+    titulo: string;
+    icono: React.ReactNode;
+    items: VacacionCritica[];
+    esVencido: boolean;
+    onSeleccionar: (empleadoId: string) => void;
+}) {
+    const ordenados = useMemo(() => [...items].sort((a, b) => b.diasPendientes - a.diasPendientes), [items]);
+    const numero = esVencido ? 'text-red-300' : 'text-amber-300';
+
+    return (
+        <div className={`${GLASS} rounded-2xl overflow-hidden`}>
+            <div className="px-5 py-3 border-b border-white/10 flex items-center gap-2">
+                {icono}
+                <h3 className="text-sm font-semibold text-white">{titulo}</h3>
+                <span className="text-xs font-medium text-white/70 bg-white/10 border border-white/20 px-2 py-0.5 rounded-full">
+                    {ordenados.length}
+                </span>
+            </div>
+            {ordenados.length === 0 ? (
+                <p className="px-5 py-6 text-sm text-white/50 text-center">Sin registros con estos filtros.</p>
+            ) : (
+                <div className="divide-y divide-white/10">
+                    {ordenados.map((item) => (
+                        <button
+                            key={item.saldoId}
+                            type="button"
+                            onClick={() => onSeleccionar(item.empleadoId)}
+                            className="w-full text-left flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-white/10 transition-colors cursor-pointer"
+                        >
+                            <div className="min-w-0">
+                                <p className="text-white font-medium truncate">{item.nombre}</p>
+                                <p className="text-xs text-white/50 truncate mt-0.5">
+                                    {item.departamento}
+                                    {item.sociedad ? ` · ${item.sociedad}` : ''}
+                                    {' · Jefe: '}{item.jefeDirecto?.nombre ?? 'Sin jefe directo'}
+                                </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                                <p className={`text-lg font-bold ${numero}`}>{item.diasPendientes}d</p>
+                                <p className="text-[11px] text-white/50">{formatearFecha(item.fechaVencimiento)}</p>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function VistaListado({ vencidos, criticos, onSeleccionarEmpleado }: {
+    vencidos: VacacionCritica[];
+    criticos: VacacionCritica[];
+    onSeleccionarEmpleado: (empleadoId: string, estado: Filtro) => void;
+}) {
+    const [sociedad, setSociedad] = useState('');
+    const [departamento, setDepartamento] = useState('');
+
+    const todos = useMemo(() => [...vencidos, ...criticos], [vencidos, criticos]);
+
+    const sociedades = useMemo(
+        () => [...new Set(todos.map((i) => i.sociedad).filter((s): s is string => Boolean(s)))].sort(),
+        [todos],
+    );
+    const departamentos = useMemo(
+        () => [...new Set(todos.map((i) => i.departamento).filter((d): d is string => Boolean(d)))].sort(),
+        [todos],
+    );
+
+    function aplicarFiltros(items: VacacionCritica[]): VacacionCritica[] {
+        return items.filter(
+            (i) => (!sociedad || i.sociedad === sociedad) && (!departamento || i.departamento === departamento),
+        );
+    }
+
+    const hayFiltros = Boolean(sociedad || departamento);
+
+    return (
+        <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+                <select
+                    value={sociedad}
+                    onChange={(e) => setSociedad(e.target.value)}
+                    className={`${GLASS} rounded-xl px-3.5 py-2 text-sm text-white bg-transparent focus:outline-none focus:ring-2 focus:ring-white/30 cursor-pointer [&>option]:text-gray-900`}
+                >
+                    <option value="">Todas las sociedades</option>
+                    {sociedades.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <select
+                    value={departamento}
+                    onChange={(e) => setDepartamento(e.target.value)}
+                    className={`${GLASS} rounded-xl px-3.5 py-2 text-sm text-white bg-transparent focus:outline-none focus:ring-2 focus:ring-white/30 cursor-pointer [&>option]:text-gray-900`}
+                >
+                    <option value="">Todos los departamentos</option>
+                    {departamentos.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+                {hayFiltros && (
+                    <button
+                        type="button"
+                        onClick={() => { setSociedad(''); setDepartamento(''); }}
+                        className="text-sm text-white/60 hover:text-white underline cursor-pointer"
+                    >
+                        Quitar filtros
+                    </button>
+                )}
+            </div>
+
+            <SeccionListado
+                titulo="Vencidos"
+                icono={<AlertTriangle size={16} className="text-red-300" />}
+                items={aplicarFiltros(vencidos)}
+                esVencido
+                onSeleccionar={(id) => onSeleccionarEmpleado(id, 'vencido')}
+            />
+            <SeccionListado
+                titulo="Próximos a vencer"
+                icono={<Clock size={16} className="text-amber-300" />}
+                items={aplicarFiltros(criticos)}
+                esVencido={false}
+                onSeleccionar={(id) => onSeleccionarEmpleado(id, 'critico')}
+            />
+        </div>
+    );
+}
+
 export function AdminDashboardPage() {
-    const { admin } = useAdminAuth();
+    const location = useLocation();
+    const seccion: Seccion = location.pathname === '/admin/registros' ? 'registros' : 'dashboards';
     const [items, setItems] = useState<VacacionCritica[]>([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [busqueda, setBusqueda] = useState('');
     const [filtro, setFiltro] = useState<Filtro>('vencido');
+    const [modoVista, setModoVista] = useState<ModoVista>('tarjetas');
     const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState<string | null>(null);
     const [paginaDepartamentos, setPaginaDepartamentos] = useState(1);
     const [paginaEmpleados, setPaginaEmpleados] = useState(1);
     const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState<string | null>(null);
+    const [filtroDetalle, setFiltroDetalle] = useState<Filtro>('vencido');
     const [detalleEmpleado, setDetalleEmpleado] = useState<DetalleEmpleadoAdmin | null>(null);
     const [cargandoDetalle, setCargandoDetalle] = useState(false);
     const [errorDetalle, setErrorDetalle] = useState<string | null>(null);
@@ -454,6 +611,8 @@ export function AdminDashboardPage() {
     const itemsActivos = filtro === 'vencido' ? vencidos : criticos;
     const esVencidoActivo = filtro === 'vencido';
     const departamentosActivos = useMemo(() => agruparPorDepartamento(itemsActivos), [itemsActivos]);
+    const topDepartamentoVencido = useMemo(() => agruparPorDepartamento(vencidos)[0], [vencidos]);
+    const topDepartamentoCritico = useMemo(() => agruparPorDepartamento(criticos)[0], [criticos]);
     const grupoSeleccionado = departamentoSeleccionado
         ? departamentosActivos.find((d) => d.departamento === departamentoSeleccionado)
         : undefined;
@@ -465,43 +624,45 @@ export function AdminDashboardPage() {
 
     return (
         <div className="space-y-6">
-            {/* Encabezado */}
-            <section className="bg-linear-to-r from-[#4a8b2c] to-[#ee7624] p-8 rounded-2xl shadow-lg text-white">
-                <div className="flex items-center gap-4">
-                    <div className="bg-white/20 p-4 rounded-full">
-                        <ShieldAlert className="w-8 h-8" />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold">Vacaciones críticas y vencidas</h1>
-                        <p className="text-white/80 text-sm">
-                            {admin ? `Bienvenido, ${admin.nombre}` : 'Panel administrativo'}
-                        </p>
+            {seccion === 'dashboards' && (
+                <div className="min-h-[calc(100vh-14rem)] flex items-center justify-center py-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl">
+                        <TarjetaResumen
+                            icono={<AlertTriangle className="w-5 h-5 text-red-300" />}
+                            etiqueta={`Días vencidos · ${vencidos.length} ${vencidos.length === 1 ? 'registro' : 'registros'}`}
+                            valor={totalDiasVencidos}
+                            texto="text-red-300"
+                        />
+                        <TarjetaResumen
+                            icono={<Clock className="w-5 h-5 text-amber-300" />}
+                            etiqueta={`Días por vencer · ${criticos.length} ${criticos.length === 1 ? 'registro' : 'registros'}`}
+                            valor={totalDiasCriticos}
+                            texto="text-amber-300"
+                        />
+                        <TarjetaResumen
+                            icono={<CalendarDays className="w-5 h-5 text-indigo-300" />}
+                            etiqueta="Empleados afectados"
+                            valor={empleadosAfectados}
+                            texto="text-indigo-300"
+                        />
+                        <TarjetaTopDepartamento
+                            icono={<Building2 className="w-5 h-5 text-red-300" />}
+                            etiqueta="Depto. con más días vencidos"
+                            resumen={topDepartamentoVencido}
+                            texto="text-red-300"
+                        />
+                        <TarjetaTopDepartamento
+                            icono={<Building2 className="w-5 h-5 text-amber-300" />}
+                            etiqueta="Depto. con más días por vencer"
+                            resumen={topDepartamentoCritico}
+                            texto="text-amber-300"
+                        />
                     </div>
                 </div>
-            </section>
+            )}
 
-            {/* Resumen */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <TarjetaResumen
-                    icono={<AlertTriangle className="w-5 h-5 text-red-300" />}
-                    etiqueta={`Días vencidos · ${vencidos.length} ${vencidos.length === 1 ? 'registro' : 'registros'}`}
-                    valor={totalDiasVencidos}
-                    texto="text-red-300"
-                />
-                <TarjetaResumen
-                    icono={<Clock className="w-5 h-5 text-amber-300" />}
-                    etiqueta={`Días por vencer · ${criticos.length} ${criticos.length === 1 ? 'registro' : 'registros'}`}
-                    valor={totalDiasCriticos}
-                    texto="text-amber-300"
-                />
-                <TarjetaResumen
-                    icono={<CalendarDays className="w-5 h-5 text-indigo-300" />}
-                    etiqueta="Empleados afectados"
-                    valor={empleadosAfectados}
-                    texto="text-indigo-300"
-                />
-            </div>
-
+            {seccion === 'registros' && (
+            <div className="space-y-6">
             {/* Buscador */}
             {items.length > 0 && (
                 <div className="relative">
@@ -547,46 +708,86 @@ export function AdminDashboardPage() {
 
             {!cargando && !error && filtrados.length > 0 && (
                 <div className="space-y-6">
-                    <div className={`flex gap-2 ${GLASS} p-1.5 rounded-2xl w-fit`}>
-                        {FILTROS.map((f) => (
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className={`flex gap-2 ${GLASS} p-1.5 rounded-2xl w-fit`}>
                             <button
-                                key={f.id}
                                 type="button"
-                                onClick={() => setFiltro(f.id)}
+                                onClick={() => setModoVista('tarjetas')}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
-                                    filtro === f.id
+                                    modoVista === 'tarjetas'
                                         ? 'bg-linear-to-r from-[#4a8b2c] to-[#ee7624] text-white shadow'
                                         : 'text-white/70 hover:bg-white/10'
                                 }`}
                             >
-                                {f.icono}
-                                {f.label}
-                                <span
-                                    className={`text-xs px-1.5 py-0.5 rounded-full ${
-                                        filtro === f.id ? 'bg-white/20' : 'bg-white/10 text-white/60'
-                                    }`}
-                                >
-                                    {f.cantidad}
-                                </span>
+                                <LayoutGrid size={14} />
+                                Cuadriculas
                             </button>
-                        ))}
+                            <button
+                                type="button"
+                                onClick={() => setModoVista('listado')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                                    modoVista === 'listado'
+                                        ? 'bg-linear-to-r from-[#4a8b2c] to-[#ee7624] text-white shadow'
+                                        : 'text-white/70 hover:bg-white/10'
+                                }`}
+                            >
+                                <List size={14} />
+                                Listado
+                            </button>
+                        </div>
+
+                        {modoVista === 'tarjetas' && !empleadoSeleccionado && (
+                            <div className={`flex gap-2 ${GLASS} p-1.5 rounded-2xl w-fit`}>
+                                {FILTROS.map((f) => (
+                                    <button
+                                        key={f.id}
+                                        type="button"
+                                        onClick={() => setFiltro(f.id)}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                                            filtro === f.id
+                                                ? 'bg-linear-to-r from-[#4a8b2c] to-[#ee7624] text-white shadow'
+                                                : 'text-white/70 hover:bg-white/10'
+                                        }`}
+                                    >
+                                        {f.icono}
+                                        {f.label}
+                                        <span
+                                            className={`text-xs px-1.5 py-0.5 rounded-full ${
+                                                filtro === f.id ? 'bg-white/20' : 'bg-white/10 text-white/60'
+                                            }`}
+                                        >
+                                            {f.cantidad}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {itemsActivos.length === 0 ? (
+                    {empleadoSeleccionado ? (
+                        <VistaDetalleEmpleado
+                            detalle={detalleEmpleado}
+                            cargando={cargandoDetalle}
+                            error={errorDetalle}
+                            filtro={filtroDetalle}
+                            onVolver={() => setEmpleadoSeleccionado(null)}
+                        />
+                    ) : modoVista === 'listado' ? (
+                        <VistaListado
+                            vencidos={vencidos}
+                            criticos={criticos}
+                            onSeleccionarEmpleado={(id, estado) => {
+                                setFiltroDetalle(estado);
+                                setEmpleadoSeleccionado(id);
+                            }}
+                        />
+                    ) : itemsActivos.length === 0 ? (
                         <div className={`${GLASS} p-10 rounded-2xl text-center`}>
                             <ShieldCheck className="w-10 h-10 text-emerald-300 mx-auto mb-3" />
                             <p className="text-white/60 text-sm">
                                 {esVencidoActivo ? 'No hay saldos vencidos.' : 'No hay saldos por vencer en los próximos 30 días.'}
                             </p>
                         </div>
-                    ) : empleadoSeleccionado ? (
-                        <VistaDetalleEmpleado
-                            detalle={detalleEmpleado}
-                            cargando={cargandoDetalle}
-                            error={errorDetalle}
-                            filtro={filtro}
-                            onVolver={() => setEmpleadoSeleccionado(null)}
-                        />
                     ) : departamentoSeleccionado ? (
                         <VistaEmpleados
                             departamento={departamentoSeleccionado}
@@ -594,7 +795,7 @@ export function AdminDashboardPage() {
                             pagina={paginaEmpleados}
                             onPaginaChange={setPaginaEmpleados}
                             onVolver={() => setDepartamentoSeleccionado(null)}
-                            onSeleccionarEmpleado={setEmpleadoSeleccionado}
+                            onSeleccionarEmpleado={(id) => { setFiltroDetalle(filtro); setEmpleadoSeleccionado(id); }}
                         />
                     ) : (
                         <VistaDepartamentos
@@ -606,6 +807,8 @@ export function AdminDashboardPage() {
                         />
                     )}
                 </div>
+            )}
+            </div>
             )}
         </div>
     );

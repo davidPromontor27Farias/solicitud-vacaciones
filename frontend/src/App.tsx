@@ -44,6 +44,7 @@ export default function App() {
                         <Route element={<RutaProtegidaAdmin />}>
                             <Route element={<AdminLayout />}>
                                 <Route path="/admin" element={<AdminHomePage />} />
+                                <Route path="/admin/registros" element={<AdminHomePage />} />
                             </Route>
                         </Route>
                     </Routes>

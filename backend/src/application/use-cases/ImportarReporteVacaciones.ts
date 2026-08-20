@@ -28,6 +28,8 @@ interface FilaValida {
     numeroEmpleado: string;
     nombre: string;
     sociedad: string | null;
+    puesto: string | null;
+    departamento: string | null;
     backupNombre: string | null;
     jefeInmediato: string | null;
     jefeMatricial: string | null;
@@ -72,6 +74,8 @@ export class ImportarReporteVacaciones {
                 numeroEmpleado,
                 nombre: base.nombre,
                 sociedad: base.sociedad,
+                puesto: base.puesto,
+                departamento: base.departamento,
                 backupNombre: base.backupNombre,
             });
             if (esNuevo) empleadosCreados++;
@@ -183,6 +187,8 @@ export class ImportarReporteVacaciones {
                 numeroEmpleado,
                 nombre,
                 sociedad: obtenerTexto(fila, 'Sociedad') || null,
+                puesto: obtenerTexto(fila, 'Puesto') || null,
+                departamento: obtenerTexto(fila, 'Departamento') || null,
                 backupNombre: obtenerTexto(fila, 'BACK UP', 'BACKUP') || null,
                 jefeInmediato: obtenerTexto(fila, 'JEFE INMEDIATO') || null,
                 jefeMatricial: obtenerTexto(fila, 'JEFE MATRICIAL') || null,

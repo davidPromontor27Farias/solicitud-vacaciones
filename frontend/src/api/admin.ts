@@ -19,6 +19,7 @@ export interface VacacionCritica {
     numeroEmpleado: string;
     nombre: string;
     departamento: string;
+    sociedad: string | null;
     puesto: string | null;
     jefeDirecto: { nombre: string } | null;
     saldoId: string;
