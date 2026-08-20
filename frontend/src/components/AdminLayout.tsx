@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAdminAuth } from '../context/AdminAuthContext';
-import { LogOut, ChevronLeft, ChevronRight, LayoutGrid, List } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight, LayoutGrid, List, Mail, FileSpreadsheet, FileClock, Download } from 'lucide-react';
 
 export function AdminLayout() {
     const { admin, cerrarSesion } = useAdminAuth();
@@ -40,7 +40,7 @@ export function AdminLayout() {
                         )}
                     </div>
 
-                    {admin?.rol !== 'nominas' && (
+                    {admin?.rol !== 'nominas' ? (
                         <nav className="px-3 py-2 flex sm:flex-col gap-1">
                             <NavLink
                                 to="/admin"
@@ -66,6 +66,70 @@ export function AdminLayout() {
                             >
                                 <List className="w-4 h-4 shrink-0" />
                                 {!colapsado && 'Registros'}
+                            </NavLink>
+                        </nav>
+                    ) : (
+                        <nav className="px-3 py-2 flex flex-col gap-1">
+                            <NavLink
+                                to="/admin"
+                                end
+                                title="Correos de jefes"
+                                className={({ isActive }) =>
+                                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                        isActive ? 'bg-[#4a8b2c]/10 text-[#4a8b2c]' : 'text-gray-600 hover:bg-gray-100'
+                                    }`
+                                }
+                            >
+                                <Mail className="w-4 h-4 shrink-0" />
+                                {!colapsado && 'Correos de jefes'}
+                            </NavLink>
+                            <NavLink
+                                to="/admin/reporte-vacaciones"
+                                title="Reporte de vacaciones"
+                                className={({ isActive }) =>
+                                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                        isActive ? 'bg-[#4a8b2c]/10 text-[#4a8b2c]' : 'text-gray-600 hover:bg-gray-100'
+                                    }`
+                                }
+                            >
+                                <FileSpreadsheet className="w-4 h-4 shrink-0" />
+                                {!colapsado && 'Reporte de vacaciones'}
+                            </NavLink>
+                            <NavLink
+                                to="/admin/historial-cargas"
+                                title="Historial de cargas"
+                                className={({ isActive }) =>
+                                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                        isActive ? 'bg-[#4a8b2c]/10 text-[#4a8b2c]' : 'text-gray-600 hover:bg-gray-100'
+                                    }`
+                                }
+                            >
+                                <FileClock className="w-4 h-4 shrink-0" />
+                                {!colapsado && 'Historial de cargas'}
+                            </NavLink>
+                            <NavLink
+                                to="/admin/nomina-solicitudes"
+                                title="Solicitudes"
+                                className={({ isActive }) =>
+                                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                        isActive ? 'bg-[#4a8b2c]/10 text-[#4a8b2c]' : 'text-gray-600 hover:bg-gray-100'
+                                    }`
+                                }
+                            >
+                                <List className="w-4 h-4 shrink-0" />
+                                {!colapsado && 'Solicitudes'}
+                            </NavLink>
+                            <NavLink
+                                to="/admin/nomina-reportes"
+                                title="Reportes"
+                                className={({ isActive }) =>
+                                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                        isActive ? 'bg-[#4a8b2c]/10 text-[#4a8b2c]' : 'text-gray-600 hover:bg-gray-100'
+                                    }`
+                                }
+                            >
+                                <Download className="w-4 h-4 shrink-0" />
+                                {!colapsado && 'Reportes'}
                             </NavLink>
                         </nav>
                     )}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { FileSpreadsheet, Upload, Download, RefreshCw, AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Mail, FileClock } from 'lucide-react';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import {
@@ -20,13 +21,14 @@ const POR_PAGINA = 10;
 
 type Seccion = 'correos' | 'vacaciones' | 'historial' | 'solicitudes' | 'reportes';
 
-const SECCIONES: { id: Seccion; label: string }[] = [
-    { id: 'correos', label: 'Correos de jefes' },
-    { id: 'vacaciones', label: 'Reporte de vacaciones' },
-    { id: 'historial', label: 'Historial de cargas' },
-    { id: 'solicitudes', label: 'Solicitudes' },
-    { id: 'reportes', label: 'Reportes' },
-];
+// Mismas rutas que usan los enlaces de navegación en AdminLayout.
+const RUTA_POR_SECCION: Record<string, Seccion> = {
+    '/admin': 'correos',
+    '/admin/reporte-vacaciones': 'vacaciones',
+    '/admin/historial-cargas': 'historial',
+    '/admin/nomina-solicitudes': 'solicitudes',
+    '/admin/nomina-reportes': 'reportes',
+};
 
 const ESTATUS_TABS: { id: EstatusSolicitud; label: string }[] = [
     { id: 'pendiente', label: 'Pendientes' },
@@ -511,7 +513,8 @@ function SeccionReportes() {
 
 export function AdminNominasPage() {
     const { admin } = useAdminAuth();
-    const [seccion, setSeccion] = useState<Seccion>('correos');
+    const location = useLocation();
+    const seccion: Seccion = RUTA_POR_SECCION[location.pathname] ?? 'correos';
 
     return (
         <div className="space-y-6">
@@ -528,23 +531,6 @@ export function AdminNominasPage() {
                     </div>
                 </div>
             </section>
-
-            <div className={`flex gap-2 ${GLASS} p-1.5 rounded-2xl w-fit`}>
-                {SECCIONES.map((s) => (
-                    <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => setSeccion(s.id)}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
-                            seccion === s.id
-                                ? 'bg-linear-to-r from-[#4a8b2c] to-[#ee7624] text-white shadow'
-                                : 'text-white/70 hover:bg-white/10'
-                        }`}
-                    >
-                        {s.label}
-                    </button>
-                ))}
-            </div>
 
             {seccion === 'correos' && <SeccionCorreosJefes />}
             {seccion === 'vacaciones' && <SeccionReporteVacaciones />}

@@ -45,6 +45,10 @@ export default function App() {
                             <Route element={<AdminLayout />}>
                                 <Route path="/admin" element={<AdminHomePage />} />
                                 <Route path="/admin/registros" element={<AdminHomePage />} />
+                                <Route path="/admin/reporte-vacaciones" element={<AdminHomePage />} />
+                                <Route path="/admin/historial-cargas" element={<AdminHomePage />} />
+                                <Route path="/admin/nomina-solicitudes" element={<AdminHomePage />} />
+                                <Route path="/admin/nomina-reportes" element={<AdminHomePage />} />
                             </Route>
                         </Route>
                     </Routes>
