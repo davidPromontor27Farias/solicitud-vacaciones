@@ -148,7 +148,7 @@ function TarjetaVacacionCritica({ item, onClick }: { item: VacacionCritica; onCl
 
             <div className="flex items-center justify-between pt-3 border-t border-white/10">
                 <div>
-                    <p className="text-[11px] text-white/40 uppercase tracking-wide">{esVencido ? 'Días vencidos' : 'Días próximos a vencer'}</p>
+                    <p className="text-[11px] text-white/50 uppercase tracking-wide">{esVencido ? 'Días vencidos' : 'Días próximos a vencer'}</p>
                     <p className={`text-2xl font-bold ${numero}`}>{item.diasPendientes}</p>
                 </div>
                 <div className="text-right">
@@ -403,10 +403,15 @@ function VistaDetalleEmpleado({ detalle, cargando, error, filtro, onVolver }: {
                                 return (
                                     <div key={saldo.id} className="px-5 py-4 flex flex-wrap items-center justify-between gap-3 text-sm">
                                         <div>
-                                            <p className="text-white/90">{formatearFecha(saldo.inicioValidez)} — {formatearFecha(saldo.fechaVencimiento)}</p>
-                                            <p className="text-white/50 text-xs mt-0.5">
-                                                {saldo.diasPorLey} por ley · {saldo.diasDisfrutados} disfrutados · <span className={estilos.texto}>{saldo.diasPendientes} {etiquetaDias}</span>
+                                            <p className="flex items-baseline gap-1.5 whitespace-nowrap text-sm">
+                                                <span className="text-white/70">{esVencidoActivo ? 'Venció el día:' : 'Vence el día:'}</span>
+                                                <span className="text-white/90 font-medium">{formatearFecha(saldo.fechaVencimiento)}</span>
                                             </p>
+                                            <div className="mt-1.5 space-y-1">
+                                                <p className="text-sm text-white/70">Días otorgados: <span className="font-semibold text-white">{saldo.diasPorLey}</span></p>
+                                                <p className="text-sm text-white/70">Días disfrutados: <span className="font-semibold text-white">{saldo.diasDisfrutados}</span></p>
+                                                <p className="text-sm text-white/70">Días {etiquetaDias}: <span className={`font-semibold ${estilos.texto}`}>{saldo.diasPendientes}</span></p>
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -458,8 +463,18 @@ function SeccionListado({ titulo, icono, items, esVencido, onSeleccionar }: {
                                 </p>
                             </div>
                             <div className="text-right shrink-0">
-                                <p className={`text-lg font-bold ${numero}`}>{item.diasPendientes}d</p>
-                                <p className="text-[11px] text-white/50">{formatearFecha(item.fechaVencimiento)}</p>
+                                <p className="flex items-baseline justify-end gap-1.5 whitespace-nowrap">
+                                    <span className="text-xs text-white/50">
+                                        {esVencido ? 'Días vencidos:' : 'Días por vencer:'}
+                                    </span>
+                                    <span className={`text-lg font-bold ${numero}`}>{item.diasPendientes}</span>
+                                </p>
+                                <p className="flex items-baseline justify-end gap-1.5 whitespace-nowrap mt-0.5">
+                                    <span className="text-[11px] text-white/50">
+                                        {esVencido ? 'Venció el día:' : 'Vence el día:'}
+                                    </span>
+                                    <span className="text-[11px] text-white/70 font-medium">{formatearFecha(item.fechaVencimiento)}</span>
+                                </p>
                             </div>
                         </button>
                     ))}
@@ -720,7 +735,7 @@ export function AdminDashboardPage() {
                                 }`}
                             >
                                 <LayoutGrid size={14} />
-                                Cuadriculas
+                                Cuadricula
                             </button>
                             <button
                                 type="button"
