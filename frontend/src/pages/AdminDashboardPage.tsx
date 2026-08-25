@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { obtenerVacacionesCriticas, obtenerDetalleEmpleado, type VacacionCritica, type DetalleEmpleadoAdmin } from '../api/admin';
+import { obtenerVacacionesCriticas, obtenerDetalleEmpleado, descargarReporteVacacionesCriticas, type VacacionCritica, type DetalleEmpleadoAdmin } from '../api/admin';
 import { ApiError } from '../api/client';
 import {
     AlertTriangle,
@@ -18,6 +18,7 @@ import {
     Mail,
     LayoutGrid,
     List,
+    Download,
 } from 'lucide-react';
 
 const TARJETAS_POR_PAGINA = 6;
@@ -491,8 +492,22 @@ function VistaListado({ vencidos, criticos, onSeleccionarEmpleado }: {
 }) {
     const [sociedad, setSociedad] = useState('');
     const [departamento, setDepartamento] = useState('');
+    const [descargando, setDescargando] = useState(false);
+    const [errorDescarga, setErrorDescarga] = useState<string | null>(null);
 
     const todos = useMemo(() => [...vencidos, ...criticos], [vencidos, criticos]);
+
+    async function exportarExcel() {
+        setDescargando(true);
+        setErrorDescarga(null);
+        try {
+            await descargarReporteVacacionesCriticas(sociedad || undefined, departamento || undefined);
+        } catch (err) {
+            setErrorDescarga(err instanceof ApiError ? err.message : 'No se pudo generar el Excel');
+        } finally {
+            setDescargando(false);
+        }
+    }
 
     const sociedades = useMemo(
         () => [...new Set(todos.map((i) => i.sociedad).filter((s): s is string => Boolean(s)))].sort(),
@@ -539,7 +554,23 @@ function VistaListado({ vencidos, criticos, onSeleccionarEmpleado }: {
                         Quitar filtros
                     </button>
                 )}
+                <button
+                    type="button"
+                    onClick={exportarExcel}
+                    disabled={descargando}
+                    className={`ml-auto flex items-center gap-1.5 ${GLASS} rounded-xl px-3.5 py-2 text-sm text-white hover:bg-white/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                    {descargando ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
+                    {descargando ? 'Generando...' : 'Exportar a Excel'}
+                </button>
             </div>
+
+            {errorDescarga && (
+                <div className={`${GLASS} p-3 rounded-xl text-red-200 text-sm flex items-center gap-2`}>
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{errorDescarga}</span>
+                </div>
+            )}
 
             <SeccionListado
                 titulo="Vencidos"

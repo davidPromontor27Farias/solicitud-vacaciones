@@ -33,6 +33,31 @@ export function obtenerVacacionesCriticas(): Promise<VacacionCritica[]> {
     return apiFetchAdmin('/admin/vacaciones-criticas');
 }
 
+export async function descargarReporteVacacionesCriticas(sociedad?: string, departamento?: string): Promise<void> {
+    const token = getAdminToken();
+    const params = new URLSearchParams();
+    if (sociedad) params.set('sociedad', sociedad);
+    if (departamento) params.set('departamento', departamento);
+    const query = params.toString();
+
+    const response = await fetch(`/api/admin/reportes/vacaciones-criticas${query ? `?${query}` : ''}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+
+    if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new ApiError(data?.error ?? 'Error inesperado', response.status, data?.detalles);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = 'vacaciones_vencidas_y_proximas.xlsx';
+    enlace.click();
+    URL.revokeObjectURL(url);
+}
+
 export interface SaldoDetalle {
     id: string;
     diasPorLey: number;
