@@ -3,10 +3,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
+import { JefeAuthProvider } from './context/JefeAuthContext';
 import { RutaProtegida } from './routes/RutaProtegida';
 import { RutaProtegidaAdmin } from './routes/RutaProtegidaAdmin';
+import { RutaProtegidaJefe } from './routes/RutaProtegidaJefe';
 import { Layout } from './components/Layout';
 import { AdminLayout } from './components/AdminLayout';
+import { JefeLayout } from './components/JefeLayout';
 import { LoginPage } from './pages/LoginPage';
 import { ActivarCuentaPage } from './pages/ActivarCuentaPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -16,6 +19,8 @@ import { RecuperarPasswordPage } from './pages/RecuperarPasswordPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminNominasPage } from './pages/AdminNominasPage';
+import { JefeEquipoPage } from './pages/JefeEquipoPage';
+import { JefeCalendarioPage } from './pages/JefeCalendarioPage';
 import { useAdminAuth } from './context/AdminAuthContext';
 
 function AdminHomePage() {
@@ -28,6 +33,7 @@ export default function App() {
     return (
         <AuthProvider>
             <AdminAuthProvider>
+            <JefeAuthProvider>
                 <BrowserRouter>
                     <Routes>
                         <Route path="/login" element={<LoginPage />} />
@@ -51,8 +57,15 @@ export default function App() {
                                 <Route path="/admin/nomina-reportes" element={<AdminHomePage />} />
                             </Route>
                         </Route>
+                        <Route element={<RutaProtegidaJefe />}>
+                            <Route element={<JefeLayout />}>
+                                <Route path="/panel-jefe" element={<JefeEquipoPage />} />
+                                <Route path="/panel-jefe/calendario" element={<JefeCalendarioPage />} />
+                            </Route>
+                        </Route>
                     </Routes>
                 </BrowserRouter>
+            </JefeAuthProvider>
             </AdminAuthProvider>
         </AuthProvider>
     )

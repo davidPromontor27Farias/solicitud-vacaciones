@@ -92,11 +92,15 @@ export class ImportarReporteVacaciones {
             if (!empleado) continue;
 
             const saldosExistentes = await this.saldoRepo.listarPorEmpleadoId(empleado.id);
-            const inicioValidezEnArchivo = new Set(periodos.map((p) => p.inicioValidez.getTime()));
+            // Un periodo se identifica por inicioValidez + fechaLimiteDisfrute: SAP puede reportar
+            // dos tramos con la misma vigencia pero contingentes que vencen en fechas distintas.
+            const clavePeriodo = (inicioValidez: Date, fechaLimiteDisfrute: Date) =>
+                `${inicioValidez.getTime()}_${fechaLimiteDisfrute.getTime()}`;
+            const periodosEnArchivo = new Set(periodos.map((p) => clavePeriodo(p.inicioValidez, p.fechaLimiteDisfrute)));
 
             for (const periodo of periodos) {
                 const existente = saldosExistentes.find(
-                    (s) => s.inicioValidez.getTime() === periodo.inicioValidez.getTime(),
+                    (s) => clavePeriodo(s.inicioValidez, s.fechaLimiteDisfrute) === clavePeriodo(periodo.inicioValidez, periodo.fechaLimiteDisfrute),
                 );
 
                 if (existente) {
@@ -130,7 +134,7 @@ export class ImportarReporteVacaciones {
             // Periodos que ya no aparecen en el archivo para este empleado: SAP ya no los reporta
             // (se corrigieron/eliminaron ahí), así que se eliminan también aquí.
             for (const saldo of saldosExistentes) {
-                if (!inicioValidezEnArchivo.has(saldo.inicioValidez.getTime())) {
+                if (!periodosEnArchivo.has(clavePeriodo(saldo.inicioValidez, saldo.fechaLimiteDisfrute))) {
                     await this.saldoRepo.eliminar(saldo.id);
                     periodosEliminados++;
                 }

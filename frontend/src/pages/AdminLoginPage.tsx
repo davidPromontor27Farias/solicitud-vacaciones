@@ -1,26 +1,50 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useLocation, type Location } from 'react-router-dom';
 import { useAdminAuth } from '../context/AdminAuthContext';
+import { useJefeAuth } from '../context/JefeAuthContext';
 import { ApiError } from '../api/client';
+
+type RolLogin = 'admin' | 'jefe';
 
 export function AdminLoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { iniciarSesion } = useAdminAuth();
-    const destinoOriginal = (location.state as { from?: Location } | null)?.from;
+    const { iniciarSesion: iniciarSesionAdmin } = useAdminAuth();
+    const { iniciarSesion: iniciarSesionJefe } = useJefeAuth();
+    // El "from" guardado en el state pudo haber quedado de un cierre de sesión del OTRO
+    // rol (ej. el jefe se desloguea desde /panel-jefe y cae aquí con from=/panel-jefe).
+    // Solo debe honrarse si es una ruta protegida del mismo rol con el que se va a iniciar
+    // sesión ahora; si no, se ignora para evitar un loop de redirección hacia una ruta a
+    // la que este rol no tiene acceso.
+    const destinoOriginalCrudo = (location.state as { from?: Location } | null)?.from;
 
+    const [rol, setRol] = useState<RolLogin>('admin');
     const [usuario, setUsuario] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [cargando, setCargando] = useState(false);
+
+    function cambiarRol(nuevoRol: RolLogin) {
+        setRol(nuevoRol);
+        setUsuario('');
+        setPassword('');
+        setError(null);
+    }
 
     async function manejarLogin(evento: FormEvent) {
         evento.preventDefault();
         setError(null);
         setCargando(true);
         try {
-            await iniciarSesion(usuario.trim(), password);
-            navigate(destinoOriginal ? `${destinoOriginal.pathname}${destinoOriginal.search}` : '/admin', { replace: true });
+            if (rol === 'admin') {
+                await iniciarSesionAdmin(usuario.trim(), password);
+                const destino = destinoOriginalCrudo?.pathname.startsWith('/admin') ? destinoOriginalCrudo : null;
+                navigate(destino ? `${destino.pathname}${destino.search}` : '/admin', { replace: true });
+            } else {
+                await iniciarSesionJefe(usuario.trim(), password);
+                const destino = destinoOriginalCrudo?.pathname.startsWith('/panel-jefe') ? destinoOriginalCrudo : null;
+                navigate(destino ? `${destino.pathname}${destino.search}` : '/panel-jefe', { replace: true });
+            }
         } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Error inesperado');
         } finally {
@@ -48,9 +72,32 @@ export function AdminLoginPage() {
                     <h1 className="text-2xl font-bold text-gray-900 mb-6">Panel administrativo</h1>
                 </div>
 
+                <div className="flex gap-1.5 bg-white/60 border border-gray-200 rounded-lg p-1 mb-5">
+                    <button
+                        type="button"
+                        onClick={() => cambiarRol('admin')}
+                        className={`flex-1 text-sm font-medium py-1.5 rounded-md transition-colors cursor-pointer ${
+                            rol === 'admin' ? 'bg-[#178236] text-white' : 'text-gray-600 hover:bg-white/70'
+                        }`}
+                    >
+                        Administrador
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => cambiarRol('jefe')}
+                        className={`flex-1 text-sm font-medium py-1.5 rounded-md transition-colors cursor-pointer ${
+                            rol === 'jefe' ? 'bg-[#178236] text-white' : 'text-gray-600 hover:bg-white/70'
+                        }`}
+                    >
+                        Jefe directo
+                    </button>
+                </div>
+
                 <form onSubmit={manejarLogin} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {rol === 'admin' ? 'Usuario' : 'Número de empleado'}
+                        </label>
                         <input
                             type="text"
                             value={usuario}

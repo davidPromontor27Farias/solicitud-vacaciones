@@ -60,12 +60,31 @@ model Empleado {
   solicitudesRevocadas SolicitudVacaciones[] @relation("RevocadoPor")
   tokensActivacion     TokenActivacion[]
 
+  planificacionesComoEmpleado PlanificacionVacaciones[] @relation("PlanificacionEmpleado")
+  planificacionesComoJefe     PlanificacionVacaciones[] @relation("PlanificacionJefe")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([jefeDirectoId])
   @@index([jefeMatricialId])
   @@map("empleados")
+}
+
+model PlanificacionVacaciones {
+  id         String   @id @default(uuid())
+  empleadoId String   @map("empleado_id")
+  empleado   Empleado @relation("PlanificacionEmpleado", fields: [empleadoId], references: [id])
+  jefeId     String   @map("jefe_id")
+  jefe       Empleado @relation("PlanificacionJefe", fields: [jefeId], references: [id])
+  fecha      DateTime @db.Date
+  nota       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([empleadoId, fecha])
+  @@index([jefeId])
+  @@map("planificaciones_vacaciones")
 }
 
 model SaldoVacaciones {
@@ -81,7 +100,11 @@ model SaldoVacaciones {
   fechaLimiteDisfrute DateTime @map("fecha_limite_disfrute") @db.Date
   updatedAt           DateTime @updatedAt @map("updated_at")
 
-  @@unique([empleadoId, inicioValidez])
+  // SAP puede reportar dos tramos de días con el mismo inicio/fin de vigencia pero con
+  // "Fecha Limite para Disfrutar" distinta (contingentes de distintos años que vencen en
+  // fechas diferentes), asi que el periodo se identifica por ambos campos, no solo por
+  // inicioValidez.
+  @@unique([empleadoId, inicioValidez, fechaLimiteDisfrute])
   @@index([empleadoId])
   @@map("saldos_vacaciones")
 }
