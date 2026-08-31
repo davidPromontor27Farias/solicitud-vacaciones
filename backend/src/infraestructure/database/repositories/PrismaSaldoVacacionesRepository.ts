@@ -42,6 +42,11 @@ export class PrismaSaldoVacacionesRepository implements SaldoVacacionesRepositor
         return rows.map(toDomain);
     }
 
+    async listarTodos(): Promise<SaldoVacaciones[]> {
+        const rows = await this.prisma.saldoVacaciones.findMany();
+        return rows.map(toDomain);
+    }
+
     async crear(saldo: SaldoVacaciones): Promise<void> {
         const props = saldo.toProps();
         await this.prisma.saldoVacaciones.create({

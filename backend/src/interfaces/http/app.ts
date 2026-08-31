@@ -84,7 +84,7 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
     app.register(async (api) => {
         registerAuthRoutes(api, { empleadoRepo, tokenRepo, passwordHasher, idGenerator, emailNotifier });
         registerSolicitudesRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, idGenerator, enlaceGenerator });
-        registerEmpleadosRoutes(api, { empleadoRepo, saldoRepo });
+        registerEmpleadosRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo });
         registerRevisionRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, enlaceGenerator });
         registerAdminRoutes(api, {adminRepo, empleadoRepo, saldoRepo, solicitudRepo, importacionNominaRepo, importacionCorreosRepo, passwordHasher, idGenerator})
         registerJefeRoutes(api, { empleadoRepo, saldoRepo, planificacionRepo, idGenerator });

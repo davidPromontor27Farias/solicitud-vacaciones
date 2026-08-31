@@ -123,6 +123,8 @@ export interface JefeSesion {
     id: string;
     numeroEmpleado: string;
     nombre: string;
+    accesoTotal: boolean;
+    tieneMatricial: boolean;
 }
 
 export function getJefeToken(): string | null {

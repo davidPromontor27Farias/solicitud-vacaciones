@@ -16,6 +16,7 @@ export interface EmpleadoProps {
     jefeDirectoId?: string | null;
     jefeMatricialId?: string | null;
     recibeNotificacionesMatricial: boolean;
+    esDirectorGeneral: boolean;
 }
 
 export class Empleado {
@@ -35,6 +36,7 @@ export class Empleado {
     get jefeDirectoId() {return this.props.jefeDirectoId ?? null;}
     get jefeMatricialId(){return this.props.jefeMatricialId ?? null}
     get recibeNotificacionesMatricial() {return this.props.recibeNotificacionesMatricial;}
+    get esDirectorGeneral() {return this.props.esDirectorGeneral;}
 
     estaBloqueado(ahora: Date = new Date()): boolean {
         return !!this.props.bloqueadoHasta && this.props.bloqueadoHasta > ahora;

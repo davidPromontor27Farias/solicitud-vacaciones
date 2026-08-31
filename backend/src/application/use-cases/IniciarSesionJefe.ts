@@ -7,10 +7,18 @@ export interface IniciarSesionJefeInput {
     password: string;
 }
 
+export interface IniciarSesionJefeResultado {
+    empleado: Empleado;
+    // Tiene a alguien reportandole por linea directa (Jefe Inmediato) o matricial (Jefe
+    // Matricial). Se recalcula en cada login porque la estructura organizacional cambia
+    // con cada reimportacion del reporte de vacaciones.
+    tieneMatricial: boolean;
+}
+
 export class IniciarSesionJefe {
     constructor(private empleadoRepo: EmpleadoRepository) {}
 
-    async ejecutar(input: IniciarSesionJefeInput): Promise<Empleado> {
+    async ejecutar(input: IniciarSesionJefeInput): Promise<IniciarSesionJefeResultado> {
         const empleado = await this.empleadoRepo.buscarPorNumeroEmpleado(input.numeroEmpleado);
         if (!empleado) {
             throw new UnauthorizedError('Credenciales invalidas');
@@ -29,14 +37,20 @@ export class IniciarSesionJefe {
             throw new UnauthorizedError('Credenciales invalidas');
         }
 
-        const equipo = await this.empleadoRepo.listarEquipoDirecto(empleado.id);
-        if (equipo.length === 0) {
+        // "Personal a cargo" incluye tanto la linea directa (Jefe Inmediato) como la
+        // matricial (Jefe Matricial): un jefe puede tener gente reportandole solo por la
+        // linea matricial, sin tener a nadie en Jefe Inmediato, y aun asi debe poder entrar.
+        const todos = await this.empleadoRepo.listarTodos();
+        const tieneSubordinados = todos.some(
+            (e) => e.jefeDirectoId === empleado.id || e.jefeMatricialId === empleado.id,
+        );
+        if (!tieneSubordinados) {
             throw new UnauthorizedError('No tienes personal a tu cargo');
         }
 
         empleado.reiniciarIntentosFallidos();
         await this.empleadoRepo.guardar(empleado);
 
-        return empleado;
+        return { empleado, tieneMatricial: tieneSubordinados };
     }
 }

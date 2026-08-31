@@ -21,6 +21,8 @@ import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminNominasPage } from './pages/AdminNominasPage';
 import { JefeEquipoPage } from './pages/JefeEquipoPage';
 import { JefeCalendarioPage } from './pages/JefeCalendarioPage';
+import { JefeTodosDepartamentosPage } from './pages/JefeTodosDepartamentosPage';
+import { JefeMatricialPage } from './pages/JefeMatricialPage';
 import { useAdminAuth } from './context/AdminAuthContext';
 
 function AdminHomePage() {
@@ -61,6 +63,8 @@ export default function App() {
                             <Route element={<JefeLayout />}>
                                 <Route path="/panel-jefe" element={<JefeEquipoPage />} />
                                 <Route path="/panel-jefe/calendario" element={<JefeCalendarioPage />} />
+                                <Route path="/panel-jefe/departamentos" element={<JefeTodosDepartamentosPage />} />
+                                <Route path="/panel-jefe/matricial" element={<JefeMatricialPage />} />
                             </Route>
                         </Route>
                     </Routes>

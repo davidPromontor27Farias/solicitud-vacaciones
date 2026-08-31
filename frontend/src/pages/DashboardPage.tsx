@@ -22,7 +22,7 @@ import { crearSolicitud, obtenerMisSolicitudes, type SolicitudResumen } from '..
 import { obtenerPerfil, type PerfilEmpleado } from '../api/empleados';
 import { ApiError } from '../api/client';
 import { SelectorDias } from '../components/SelectorDias';
-import { formatearDiasComoRangos, formatearFecha } from '../utils/fechas';
+import { formatearDiasComoRangos } from '../utils/fechas';
 import { dividirNombres } from '../utils/texto';
 
 
@@ -239,13 +239,20 @@ export function DashboardPage() {
 
                 {perfil ? (
                 <div className='transition-opacity duration-300 starting:opacity-0'>
-                    <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
                     <div className="bg-linear-to-br from-[#4a8b2c]/5 to-[#4a8b2c]/10 p-4 rounded-xl border border-[#4a8b2c]/20">
                         <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Días disponibles</span>
                         <TrendingUp className="w-5 h-5 text-[#4a8b2c]" />
                         </div>
                         <p className="text-3xl font-bold text-[#4a8b2c] mt-2">{perfil.totalPendientes}</p>
+                    </div>
+                    <div className="bg-linear-to-br from-blue-500/5 to-blue-500/10 p-4 rounded-xl border border-blue-500/20">
+                        <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Vacaciones programadas</span>
+                        <CalendarDays className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <p className="text-3xl font-bold text-blue-600 mt-2">{perfil.totalProgramados}</p>
                     </div>
                     <div className="bg-linear-to-br from-[#ee7624]/5 to-[#ee7624]/10 p-4 rounded-xl border border-[#ee7624]/20">
                         <div className="flex items-center justify-between">
@@ -256,6 +263,26 @@ export function DashboardPage() {
                     </div>
                     </div>
 
+                    {perfil.vacacionesProgramadas.length > 0 && (
+                    <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                        <CalendarDays className="w-4 h-4 text-blue-600" />
+                        <h3 className="text-sm font-semibold text-blue-900">Vacaciones programadas</h3>
+                        </div>
+                        <p className="text-xs text-blue-700 mb-3">
+                        Ya aprobadas, pero aún no cuentan como días ocupados porque su fecha todavía no llega.
+                        </p>
+                        <ul className="space-y-1.5">
+                        {perfil.vacacionesProgramadas.map((v) => (
+                            <li key={v.solicitudId} className="flex items-center justify-between text-sm bg-white rounded-lg px-3 py-2 border border-blue-100">
+                            <span className="text-gray-700">{formatearDiasComoRangos(v.dias)}</span>
+                            <span className="text-blue-700 font-medium shrink-0 ml-3">{v.cantidadDias} día{v.cantidadDias > 1 ? 's' : ''}</span>
+                            </li>
+                        ))}
+                        </ul>
+                    </div>
+                    )}
+
                     <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
@@ -263,9 +290,7 @@ export function DashboardPage() {
                             <th className="font-medium py-2 pr-4 text-left">Periodo</th>
                             <th className="font-medium py-2 pr-4 text-left">Días por ley</th>
                             <th className="font-medium py-2 pr-4 text-left">Disfrutados</th>
-                            <th className="font-medium py-2 pr-4 text-left">Pendientes</th>
-                            <th className="font-medium py-2 pr-4 text-left">Tomar a partir de:</th>
-                            <th className="font-medium py-2 pr-4 text-left">Fecha límite</th>
+                            <th className="font-medium py-2 pr-4 text-left">Aprobados</th>
                             <th className="font-medium py-2 text-left">Estado</th>
                         </tr>
                         </thead>
@@ -277,9 +302,7 @@ export function DashboardPage() {
                             <td className="py-2 pr-4 text-gray-600">{s.anioInicio}-{s.anioFin}</td>
                             <td className="py-2 pr-4 font-medium">{s.diasPorLey}</td>
                             <td className="py-2 pr-4 text-gray-600">{s.diasDisfrutados}</td>
-                            <td className="py-2 pr-4 text-[#4a8b2c] font-medium">{s.diasPendientes}</td>
-                            <td className="py-2 pr-4 text-gray-600">{s.finValidez}</td>
-                            <td className="py-2 pr-4 text-gray-600">{formatearFecha(s.fechaLimiteDisfrute)}</td>
+                            <td className="py-2 pr-4 text-[#4a8b2c] font-medium">{s.diasAprobados}</td>
                             <td className="py-2">
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${estadoEstilo.bg} ${estadoEstilo.text}`}>
                                 {estadoEstilo.label}

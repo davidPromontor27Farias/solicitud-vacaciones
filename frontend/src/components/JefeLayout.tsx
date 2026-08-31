@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useJefeAuth } from '../context/JefeAuthContext';
-import { LogOut, ChevronLeft, ChevronRight, Users, CalendarDays } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight, Users, CalendarDays, Building2 } from 'lucide-react';
 
 export function JefeLayout() {
     const { jefe, cerrarSesion } = useJefeAuth();
@@ -66,6 +66,34 @@ export function JefeLayout() {
                             <CalendarDays className="w-4 h-4 shrink-0" />
                             {!colapsado && 'Calendario'}
                         </NavLink>
+                        {jefe?.accesoTotal && (
+                            <NavLink
+                                to="/panel-jefe/departamentos"
+                                title="Todos los departamentos"
+                                className={({ isActive }) =>
+                                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                        isActive ? 'bg-[#4a8b2c]/10 text-[#4a8b2c]' : 'text-gray-600 hover:bg-gray-100'
+                                    }`
+                                }
+                            >
+                                <Building2 className="w-4 h-4 shrink-0" />
+                                {!colapsado && 'Todos los departamentos'}
+                            </NavLink>
+                        )}
+                        {jefe?.tieneMatricial && (
+                            <NavLink
+                                to="/panel-jefe/matricial"
+                                title="Matricial"
+                                className={({ isActive }) =>
+                                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                        isActive ? 'bg-[#4a8b2c]/10 text-[#4a8b2c]' : 'text-gray-600 hover:bg-gray-100'
+                                    }`
+                                }
+                            >
+                                <Building2 className="w-4 h-4 shrink-0" />
+                                {!colapsado && 'Matricial'}
+                            </NavLink>
+                        )}
                     </nav>
 
                     <div className="sm:mt-auto p-4 border-t border-gray-200 flex items-center justify-between gap-3 sm:flex-col sm:items-stretch">

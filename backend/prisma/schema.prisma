@@ -46,6 +46,9 @@ model Empleado {
   intentosFallidos              Int       @default(0) @map("intentos_fallidos")
   bloqueadoHasta                DateTime? @map("bloqueado_hasta")
   recibeNotificacionesMatricial Boolean   @default(true) @map("recibe_notificaciones_matricial")
+  // Vista extra "Todos los departamentos" dentro del panel de jefe directo (alcance de
+  // toda la empresa, no solo su equipo). Pensado para el director general.
+  esDirectorGeneral              Boolean   @default(false) @map("es_director_general")
 
   jefeDirectoId        String?    @map("jefe_directo_id")
   jefeDirecto          Empleado?  @relation("JefeDirecto", fields: [jefeDirectoId], references: [id])

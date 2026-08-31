@@ -3,6 +3,7 @@ import { apiFetch } from './client';
 export interface PeriodoSaldo {
     diasPorLey: number;
     diasDisfrutados: number;
+    diasAprobados: number;
     diasPendientes: number;
     inicioValidez: string;
     finValidez: string;
@@ -11,6 +12,12 @@ export interface PeriodoSaldo {
     anioInicio: number;
     anioFin: number;
     estado: 'disponible' | 'proximo' | 'vencido';
+}
+
+export interface VacacionProgramada {
+    solicitudId: string;
+    dias: string[];
+    cantidadDias: number;
 }
 
 export interface PerfilEmpleado {
@@ -26,6 +33,8 @@ export interface PerfilEmpleado {
     saldos: PeriodoSaldo[];
     totalPendientes: number;
     totalDisfrutados: number;
+    totalProgramados: number;
+    vacacionesProgramadas: VacacionProgramada[];
 }
 
 export function obtenerPerfil(): Promise<PerfilEmpleado> {

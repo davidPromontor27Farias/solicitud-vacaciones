@@ -41,6 +41,31 @@ export function obtenerEquipo(): Promise<EmpleadoEquipo[]> {
     return apiFetchJefe('/jefe/equipo');
 }
 
+// Solo disponible si la sesión del jefe tiene accesoTotal (director general).
+export function obtenerTodosLosDepartamentos(): Promise<EmpleadoEquipo[]> {
+    return apiFetchJefe('/jefe/todos-los-departamentos');
+}
+
+export type EstadoNodoMatricial = 'vencido' | 'critico' | 'vigente' | 'sin_datos';
+
+export interface NodoMatricial {
+    empleadoId: string;
+    numeroEmpleado: string;
+    nombre: string;
+    puesto: string | null;
+    departamento: string | null;
+    estado: EstadoNodoMatricial;
+    diasPendientes: number;
+    fechaLimiteDisfrute: string | null;
+    hijos: NodoMatricial[];
+}
+
+// Solo disponible si la sesión del jefe tiene tieneMatricial (subordinados directos o
+// matriciales): su propia piramide jerárquica en forma de árbol, no toda la empresa.
+export function obtenerArbolMatricial(): Promise<NodoMatricial> {
+    return apiFetchJefe('/jefe/matricial');
+}
+
 export interface Planificacion {
     id: string;
     empleadoId: string;
