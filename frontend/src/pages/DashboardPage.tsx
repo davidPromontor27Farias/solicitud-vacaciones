@@ -256,54 +256,38 @@ export function DashboardPage() {
                     </div>
                     <div className="bg-linear-to-br from-[#ee7624]/5 to-[#ee7624]/10 p-4 rounded-xl border border-[#ee7624]/20">
                         <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Días ocupados</span>
+                        <span className="text-sm text-gray-600">Días disfrutados</span>
                         <TrendingDown className="w-5 h-5 text-[#ee7624]" />
                         </div>
                         <p className="text-3xl font-bold text-[#ee7624] mt-2">{perfil.totalDisfrutados}</p>
                     </div>
                     </div>
 
-                    {perfil.vacacionesProgramadas.length > 0 && (
-                    <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                        <CalendarDays className="w-4 h-4 text-blue-600" />
-                        <h3 className="text-sm font-semibold text-blue-900">Vacaciones programadas</h3>
-                        </div>
-                        <p className="text-xs text-blue-700 mb-3">
-                        Ya aprobadas, pero aún no cuentan como días ocupados porque su fecha todavía no llega.
-                        </p>
-                        <ul className="space-y-1.5">
-                        {perfil.vacacionesProgramadas.map((v) => (
-                            <li key={v.solicitudId} className="flex items-center justify-between text-sm bg-white rounded-lg px-3 py-2 border border-blue-100">
-                            <span className="text-gray-700">{formatearDiasComoRangos(v.dias)}</span>
-                            <span className="text-blue-700 font-medium shrink-0 ml-3">{v.cantidadDias} día{v.cantidadDias > 1 ? 's' : ''}</span>
-                            </li>
-                        ))}
-                        </ul>
-                    </div>
-                    )}
 
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto rounded-xl border border-gray-200">
                     <table className="w-full text-sm">
                         <thead>
-                        <tr className="text-gray-500 text-xs">
-                            <th className="font-medium py-2 pr-4 text-left">Periodo</th>
-                            <th className="font-medium py-2 pr-4 text-left">Días por ley</th>
-                            <th className="font-medium py-2 pr-4 text-left">Disfrutados</th>
-                            <th className="font-medium py-2 pr-4 text-left">Aprobados</th>
-                            <th className="font-medium py-2 text-left">Estado</th>
+                        <tr className="bg-linear-to-r from-[#4a8b2c] to-[#ee7624] divide-x divide-white/20">
+                            <th className="font-semibold text-white py-2.5 px-4 text-left">Periodo</th>
+                            <th className="font-semibold text-white py-2.5 px-4 text-left">Días por ley</th>
+                            <th className="font-semibold text-white py-2.5 px-4 text-left">Disfrutados</th>
+                            <th className="font-semibold text-white py-2.5 px-4 text-left">Programadas</th>
+                            <th className="font-semibold text-white py-2.5 px-4 text-left">Días disponibles</th>
+                            <th className="font-semibold text-white py-2.5 px-4 text-left">Estado</th>
                         </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-gray-200">
                         {perfil.saldos.map((s, i) => {
                             const estadoEstilo = ESTADO_SALDO_ESTILOS[s.estado];
+                            const diasDisponibles = s.diasPorLey - s.diasDisfrutados - s.diasAprobados;
                             return (
-                            <tr key={i} className="border-t border-gray-50 hover:bg-gray-50 transition-colors">
-                            <td className="py-2 pr-4 text-gray-600">{s.anioInicio}-{s.anioFin}</td>
-                            <td className="py-2 pr-4 font-medium">{s.diasPorLey}</td>
-                            <td className="py-2 pr-4 text-gray-600">{s.diasDisfrutados}</td>
-                            <td className="py-2 pr-4 text-[#4a8b2c] font-medium">{s.diasAprobados}</td>
-                            <td className="py-2">
+                            <tr key={i} className={`divide-x divide-gray-200 hover:bg-gray-50 transition-colors ${i % 2 === 1 ? 'bg-gray-50/60' : ''}`}>
+                            <td className="py-2.5 px-4 text-gray-600">{s.anioInicio}-{s.anioFin}</td>
+                            <td className="py-2.5 px-4 font-medium text-gray-800">{s.diasPorLey}</td>
+                            <td className="py-2.5 px-4 text-gray-600">{s.diasDisfrutados}</td>
+                            <td className="py-2.5 px-4 text-[#4a8b2c] font-medium">{s.diasAprobados}</td>
+                            <td className="py-2.5 px-4 text-[#ee7624] font-semibold">{diasDisponibles}</td>
+                            <td className="py-2.5 px-4">
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${estadoEstilo.bg} ${estadoEstilo.text}`}>
                                 {estadoEstilo.label}
                                 </span>
@@ -358,7 +342,7 @@ export function DashboardPage() {
                 <div className="bg-blue-50 p-3 rounded-xl flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
                     <p className="text-xs text-blue-700">
-                    No puedes seleccionar domingos ni días que ya pasaron.
+                      No puedes seleccionar domingos ni días con más de 3 días de antigüedad.
                     </p>
                 </div>
 

@@ -19,12 +19,15 @@ function inicioDelDia(fecha: Date): Date {
     return new Date(Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth(), fecha.getUTCDate()));
 }
 
+const DIAS_ATRAS_PERMITIDOS = 3;
+
 export function SelectorDias({ seleccionados, onChange }: SelectorDiasProps) {
     const hoy = inicioDelDia(new Date());
+    const limiteAtras = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate() - DIAS_ATRAS_PERMITIDOS));
     const [mesActual, setMesActual] = useState(() => new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), 1)));
 
     function puedeSeleccionar(fecha: Date): boolean {
-        if (fecha < hoy) return false;
+        if (fecha < limiteAtras) return false;
         if (fecha.getUTCDay() === 0) return false;
         return true;
     }

@@ -18,6 +18,8 @@ function inicioDelDiaUtc(fecha: Date): Date {
     return new Date(Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth(), fecha.getUTCDate()));
 }
 
+const DIAS_ATRAS_PERMITIDOS = 3;
+
 export class CrearSolicitudVacaciones {
     constructor(
         private empleadoRepo: EmpleadoRepository,
@@ -37,8 +39,9 @@ export class CrearSolicitudVacaciones {
         const rango = RangoDias.crear(input.dias);
 
         const hoy = inicioDelDiaUtc(new Date());
-        if (inicioDelDiaUtc(rango.primerDia) < hoy) {
-            throw new ValidationError('No puedes solicitar días que ya pasaron');
+        const limiteAtras = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate() - DIAS_ATRAS_PERMITIDOS));
+        if (inicioDelDiaUtc(rango.primerDia) < limiteAtras) {
+            throw new ValidationError(`No puedes solicitar días con más de ${DIAS_ATRAS_PERMITIDOS} días de antigüedad`);
         }
 
         const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id)

@@ -106,10 +106,11 @@ export class ObtenerPerfilEmpleado {
         const diasDisfrutadosMostrado = (saldo: SaldoVacaciones): number =>
             Math.max(saldo.diasDisfrutados, diasPasadosPorSaldoId.get(saldo.id) ?? 0);
 
-        // Total de dias ya comprometidos en solicitudes aprobadas para este periodo, ya
-        // hayan ocurrido (disfrutados) o esten agendados a futuro (programados).
+        // Dias de este periodo con solicitud aprobada cuya fecha todavia no llega. En cuanto
+        // la fecha pasa, este numero baja (deja de contarse aqui) y diasDisfrutadosMostrado
+        // sube por esa misma cantidad, sin doble conteo entre ambas columnas.
         const diasAprobadosMostrado = (saldo: SaldoVacaciones): number =>
-            diasDisfrutadosMostrado(saldo) + (diasFuturosPorSaldoId.get(saldo.id) ?? 0);
+            diasFuturosPorSaldoId.get(saldo.id) ?? 0;
 
         return {
             nombre: empleado.nombre,
