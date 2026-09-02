@@ -82,7 +82,10 @@ export class ObtenerPerfilEmpleado {
         const diasFuturosPorSaldoId = new Map<string, number>();
         const vacacionesProgramadas: VacacionProgramadaResultado[] = [];
         for (const solicitud of aprobadas) {
-            const diasFuturos = solicitud.dias.filter((dia) => dia >= hoyUtc);
+            // Un dia revocado ya no cuenta ni como disfrutado ni como programado: los dias
+            // que se le hayan revocado a esta solicitud se excluyen aqui por completo.
+            const diasActivos = solicitud.diasActivos;
+            const diasFuturos = diasActivos.filter((dia) => dia >= hoyUtc);
             if (diasFuturos.length > 0) {
                 vacacionesProgramadas.push({
                     solicitudId: solicitud.id,
@@ -91,7 +94,7 @@ export class ObtenerPerfilEmpleado {
                 });
             }
 
-            for (const dia of solicitud.dias) {
+            for (const dia of diasActivos) {
                 const saldoDelDia = saldos.find((s) => s.estaVigente(dia));
                 if (!saldoDelDia) continue;
                 const mapa = dia >= hoyUtc ? diasFuturosPorSaldoId : diasPasadosPorSaldoId;

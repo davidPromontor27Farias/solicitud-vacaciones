@@ -1,23 +1,25 @@
 import { FastifyInstance } from "fastify";
 import { EmpleadoRepository } from "../../../domain/repositories/EmpleadoRepository";
 import { SaldoVacacionesRepository } from "../../../domain/repositories/SaldoVacacionesRepository";
-import { PlanificacionVacacionesRepository } from "../../../domain/repositories/PlanificacionVacacionesRepository";
-import { IdGenerator } from "../../../application/ports/IdGenerator";
+import { SolicitudVacacionesRepository } from "../../../domain/repositories/SolicitudVacacionesRepository";
 import { IniciarSesionJefe } from "../../../application/use-cases/IniciarSesionJefe";
 import { ListarEquipoConVacaciones } from "../../../application/use-cases/ListarEquipoConVacaciones";
 import { ListarTodosConVacaciones } from "../../../application/use-cases/ListarTodosConVacaciones";
 import { ObtenerArbolMatricial, NodoArbolMatricial } from "../../../application/use-cases/ObtenerArbolMatricial";
-import { CrearPlanificacion } from "../../../application/use-cases/CrearPlanificacion";
-import { ListarPlanificacion } from "../../../application/use-cases/ListarPlanificacion";
-import { EliminarPlanificacion } from "../../../application/use-cases/EliminarPlanificacion";
+import { ObtenerVacacionesAprobadasEquipo } from "../../../application/use-cases/ObtenerVacacionesAprobadasEquipo";
+import { ObtenerNotificacionesJefe } from "../../../application/use-cases/ObtenerNotificacionesJefe";
+import { RevocarSolicitud } from "../../../application/use-cases/RevocarSolicitud";
+import { EnlaceRevisionGenerator } from "../../../application/ports/EnlaceRevisionGenerator";
+import { EmailNotifier } from "../../../application/ports/EmailNotifier";
 import { authenticateJefe } from "../middlewares/authenticateJefe";
-import { jefeLoginSchema, crearPlanificacionSchema } from "../schemas/jefe.schemas";
+import { jefeLoginSchema, revocarVacacionesJefeSchema } from "../schemas/jefe.schemas";
 
 interface JefeDeps {
     empleadoRepo: EmpleadoRepository;
     saldoRepo: SaldoVacacionesRepository;
-    planificacionRepo: PlanificacionVacacionesRepository;
-    idGenerator: IdGenerator;
+    solicitudRepo: SolicitudVacacionesRepository;
+    enlaceGenerator: EnlaceRevisionGenerator;
+    emailNotifier: EmailNotifier;
 }
 
 export function registerJefeRoutes(app: FastifyInstance, deps: JefeDeps): void {
@@ -25,9 +27,9 @@ export function registerJefeRoutes(app: FastifyInstance, deps: JefeDeps): void {
     const listarEquipoConVacaciones = new ListarEquipoConVacaciones(deps.empleadoRepo, deps.saldoRepo);
     const listarTodosConVacaciones = new ListarTodosConVacaciones(deps.empleadoRepo, deps.saldoRepo);
     const obtenerArbolMatricial = new ObtenerArbolMatricial(deps.empleadoRepo, deps.saldoRepo);
-    const crearPlanificacion = new CrearPlanificacion(deps.empleadoRepo, deps.planificacionRepo, deps.idGenerator);
-    const listarPlanificacion = new ListarPlanificacion(deps.planificacionRepo);
-    const eliminarPlanificacion = new EliminarPlanificacion(deps.planificacionRepo);
+    const obtenerVacacionesAprobadasEquipo = new ObtenerVacacionesAprobadasEquipo(deps.solicitudRepo, deps.empleadoRepo);
+    const obtenerNotificacionesJefe = new ObtenerNotificacionesJefe(deps.solicitudRepo, deps.empleadoRepo, deps.enlaceGenerator);
+    const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier);
 
     app.post('/jefe/login', {
         config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
@@ -112,41 +114,51 @@ export function registerJefeRoutes(app: FastifyInstance, deps: JefeDeps): void {
         return serializar(arbol);
     });
 
-    app.get('/jefe/planificacion', { preHandler: authenticateJefe }, async (request) => {
+    // Vacaciones ya aprobadas de los subordinados directos y matriciales del jefe, para
+    // llevar control de quien tiene vacaciones encima y poder revocarlas desde aqui.
+    app.get('/jefe/vacaciones-equipo', { preHandler: authenticateJefe }, async (request) => {
         const jefeId = (request.user as { sub: string }).sub;
-        const planificaciones = await listarPlanificacion.ejecutar(jefeId);
-        return planificaciones.map((p) => ({
-            id: p.id,
-            empleadoId: p.empleadoId,
-            fecha: p.fecha.toISOString().slice(0, 10),
-            nota: p.nota,
+        const hoy = new Date();
+        const desde = new Date(Date.UTC(hoy.getUTCFullYear() - 1, hoy.getUTCMonth(), 1));
+        const hasta = new Date(Date.UTC(hoy.getUTCFullYear() + 1, hoy.getUTCMonth() + 1, 0));
+
+        const solicitudes = await obtenerVacacionesAprobadasEquipo.ejecutar({ jefeId, desde, hasta });
+        return solicitudes.map((s) => ({
+            solicitudId: s.solicitudId,
+            empleadoId: s.empleadoId,
+            empleadoNombre: s.empleadoNombre,
+            dias: s.dias.map((d) => d.toISOString().slice(0, 10)),
         }));
     });
 
-    app.post('/jefe/planificacion', { preHandler: authenticateJefe }, async (request, reply) => {
+    // Revoca una solicitud aprobada (total o parcialmente, segun los dias que se manden).
+    // Lo puede hacer el jefe directo o el jefe matricial del empleado indistintamente.
+    app.post('/jefe/vacaciones-equipo/:solicitudId/revocar', { preHandler: authenticateJefe }, async (request) => {
         const jefeId = (request.user as { sub: string }).sub;
-        const body = crearPlanificacionSchema.parse(request.body);
+        const { solicitudId } = request.params as { solicitudId: string };
+        const body = revocarVacacionesJefeSchema.parse(request.body);
 
-        const planificacion = await crearPlanificacion.ejecutar({
-            jefeId,
-            empleadoId: body.empleadoId,
-            fecha: new Date(`${body.fecha}T00:00:00.000Z`),
-            nota: body.nota ?? null,
+        const solicitud = await revocarSolicitud.ejecutar({
+            solicitudId,
+            revocadoPorId: jefeId,
+            motivo: body.motivo,
+            dias: body.dias?.map((iso) => new Date(`${iso}T00:00:00.000Z`)),
         });
 
-        reply.status(201).send({
-            id: planificacion.id,
-            empleadoId: planificacion.empleadoId,
-            fecha: planificacion.fecha.toISOString().slice(0, 10),
-            nota: planificacion.nota,
-        });
+        return { id: solicitud.id, estatus: solicitud.estatus, diasActivos: solicitud.diasActivos.map((d) => d.toISOString().slice(0, 10)) };
     });
 
-    app.delete('/jefe/planificacion/:id', { preHandler: authenticateJefe }, async (request, reply) => {
+    // Solicitudes pendientes por aprobar de los subordinados directos, para la campana de
+    // notificaciones del panel. enlaceToken lleva a la misma pantalla que el enlace del correo.
+    app.get('/jefe/notificaciones', { preHandler: authenticateJefe }, async (request) => {
         const jefeId = (request.user as { sub: string }).sub;
-        const { id } = request.params as { id: string };
-
-        await eliminarPlanificacion.ejecutar({ id, jefeId });
-        reply.status(204).send();
+        const notificaciones = await obtenerNotificacionesJefe.ejecutar(jefeId);
+        return notificaciones.map((n) => ({
+            solicitudId: n.solicitudId,
+            empleadoNombre: n.empleadoNombre,
+            dias: n.dias.map((d) => d.toISOString().slice(0, 10)),
+            createdAt: n.createdAt.toISOString(),
+            enlaceToken: n.enlaceToken,
+        }));
     });
 }

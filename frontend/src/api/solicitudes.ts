@@ -27,23 +27,6 @@ export function obtenerMisSolicitudes(pagina = 1, porPagina = 10): Promise<Histo
     return apiFetch(`/solicitudes/mias?pagina=${pagina}&porPagina=${porPagina}`);
 }
 
-export interface SolicitudEquipo {
-    id: string;
-    empleadoId: string;
-    empleadoNombre: string | null;
-    estatus: EstatusSolicitud;
-    dias: string[];
-    backupNombre: string | null;
-}
-
-export function obtenerSolicitudesEquipo(): Promise<SolicitudEquipo[]> {
-    return apiFetch('/solicitudes/equipo');
-}
-
-export function obtenerCalendarioMiEquipo(): Promise<SolicitudEquipo[]> {
-    return apiFetch('/solicitudes/mi-equipo');
-}
-
 export function aprobarSolicitud(id: string, backupSeleccionado?: string): Promise<SolicitudResumen> {
     return apiFetch(`/solicitudes/${id}/aprobar`, {
         method: 'POST',

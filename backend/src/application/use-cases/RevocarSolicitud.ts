@@ -10,6 +10,10 @@ export interface RevocarSolicitudInput {
     solicitudId: string;
     revocadoPorId: string;
     motivo: string;
+    // Si se omite, se revocan todos los dias que sigan activos (revocacion completa).
+    // Si se especifica, solo esos dias (deben pertenecer a los dias activos de la
+    // solicitud) — permite revocar, por ejemplo, solo 2 de 5 dias ya solicitados.
+    dias?: Date[];
 }
 
 export class RevocarSolicitud {
@@ -35,44 +39,61 @@ export class RevocarSolicitud {
             throw new UnauthorizedError('No tienes permiso para revocar esta solicitud');
         }
 
+        const diasARevocar = input.dias ?? solicitud.diasActivos;
+
         try {
-            solicitud.revocar(input.motivo, input.revocadoPorId);
+            solicitud.revocarDias(diasARevocar, input.motivo, input.revocadoPorId);
         } catch (error) {
             throw new ValidationError(error instanceof Error ? error.message : 'No se pudo revocar la solicitud');
         }
         await this.solicitudRepo.actualizar(solicitud);
+        await this.solicitudRepo.marcarDiasRevocados(solicitud.id, diasARevocar);
 
-        await this.restituirSaldo(empleado, solicitud);
-        await this.notificar(empleado, solicitud, input.revocadoPorId);
+        await this.restituirSaldo(empleado, diasARevocar);
+        await this.notificar(empleado, solicitud, input.revocadoPorId, diasARevocar);
 
         return solicitud;
     }
 
-    private async restituirSaldo(empleado: Empleado, solicitud: SolicitudVacaciones): Promise<void> {
+    private async restituirSaldo(empleado: Empleado, diasARevocar: Date[]): Promise<void> {
         const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id);
         if (saldos.length === 0) {
             throw new ValidationError('El empleado no tiene periodos de saldo registrados');
         }
 
-        const primerDia = solicitud.dias[0];
-        const vigentes = saldos
-            .filter((s) => s.estaVigente(primerDia))
-            .sort((a, b) => a.fechaVencimiento.getTime() - b.fechaVencimiento.getTime());
+        // Cada dia revocado se devuelve al periodo (saldo) al que realmente pertenece, no
+        // todos de golpe al primero: una solicitud puede cruzar dos periodos si se pidio
+        // cerca de una renovacion.
+        const cantidadPorSaldoId = new Map<string, number>();
+        for (const dia of diasARevocar) {
+            const vigentes = saldos
+                .filter((s) => s.estaVigente(dia))
+                .sort((a, b) => a.fechaVencimiento.getTime() - b.fechaVencimiento.getTime());
+            const destino = vigentes[0]
+                ?? [...saldos].sort((a, b) => b.inicioValidez.getTime() - a.inicioValidez.getTime())[0];
+            cantidadPorSaldoId.set(destino.id, (cantidadPorSaldoId.get(destino.id) ?? 0) + 1);
+        }
 
-        const destino = vigentes[0]
-            ?? [...saldos].sort((a, b) => b.inicioValidez.getTime() - a.inicioValidez.getTime())[0];
-
-        destino.restituirDias(solicitud.cantidadDias);
-        await this.saldoRepo.guardar(destino);
+        for (const [saldoId, cantidad] of cantidadPorSaldoId) {
+            const saldo = saldos.find((s) => s.id === saldoId)!;
+            saldo.restituirDias(cantidad);
+            await this.saldoRepo.guardar(saldo);
+        }
     }
 
-    private async notificar(empleado: Empleado, solicitud: SolicitudVacaciones, revocadoPorId: string): Promise<void> {
+    private async notificar(empleado: Empleado, solicitud: SolicitudVacaciones, revocadoPorId: string, diasARevocar: Date[]): Promise<void> {
+        const fechas = [...diasARevocar]
+            .sort((a, b) => a.getTime() - b.getTime())
+            .map((d) => d.toISOString().slice(0, 10))
+            .join(', ');
+        const datosComunes = { dias: String(diasARevocar.length), fechas, motivo: solicitud.motivoRevocacion ?? '' };
+
         if (empleado.correoPersonal) {
             await this.emailNotifier.encolar({
                 tipo: 'revocacion',
                 destinatario: empleado.correoPersonal,
                 solicitudId: solicitud.id,
-                datos: { dias: String(solicitud.cantidadDias), motivo: solicitud.motivoRevocacion ?? '' },
+                datos: datosComunes,
             });
         }
 
@@ -86,7 +107,7 @@ export class RevocarSolicitud {
                     tipo: 'revocacion',
                     destinatario: otroJefe.correoParaSolicitudes,
                     solicitudId: solicitud.id,
-                    datos: { empleado: empleado.nombre, dias: String(solicitud.cantidadDias) },
+                    datos: { ...datosComunes, empleado: empleado.nombre },
                 });
             }
         }

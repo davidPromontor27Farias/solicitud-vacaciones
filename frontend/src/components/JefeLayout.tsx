@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useJefeAuth } from '../context/JefeAuthContext';
+import { NotificacionesJefe } from './NotificacionesJefe';
 import { LogOut, ChevronLeft, ChevronRight, Users, CalendarDays, Building2 } from 'lucide-react';
 
 export function JefeLayout() {
@@ -110,7 +111,10 @@ export function JefeLayout() {
                 </aside>
 
                 <main className="flex-1 min-w-0 px-6 py-8">
-                    <div className="max-w-6xl mx-auto">
+                    <div className="max-w-screen-2xl mx-auto">
+                        <div className="flex justify-end mb-4">
+                            <NotificacionesJefe />
+                        </div>
                         <Outlet />
                     </div>
                 </main>

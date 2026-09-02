@@ -174,20 +174,23 @@ function construirContenido(tipo: string, datos: Record<string, string>): Omit<C
 
         case 'revocacion': {
             const dias = datos.dias ?? '';
+            const fechas = datos.fechas ?? '';
             const motivo = datos.motivo ?? '';
             const empleado = datos.empleado;
+            const esUnDia = Number(dias) === 1;
+            const etiquetaFechas = esUnDia ? 'Fecha revocada' : 'Fechas revocadas';
             return {
                 subject: empleado ? `Revocación de vacaciones: ${escaparHtml(empleado)}` : 'Tu solicitud de vacaciones fue revocada',
                 text: empleado
-                    ? `${empleado} tuvo ${dias} día(s) de vacaciones revocados. Motivo: ${escaparHtml(motivo)}`
-                    : `Tu solicitud de ${dias} día(s) fue revocada. Motivo: ${escaparHtml(motivo)}`,
+                    ? `${empleado} tuvo ${dias} día(s) de vacaciones revocados (${fechas}). Motivo: ${escaparHtml(motivo)}`
+                    : `Tu solicitud de ${dias} día(s) fue revocada (${fechas}). Motivo: ${escaparHtml(motivo)}`,
                 html: envolverPlantilla(`
                     <p style="margin:0 0 16px;">
                         ${empleado ? `<strong>${empleado}</strong> tuvo` : 'Tu solicitud de vacaciones ya aprobada fue'}
                         <strong style="color:#dc2626;"> revocada</strong>.
                     </p>
                     ${tabla(
-                        filaTabla('Días', dias) +
+                        filaTabla(etiquetaFechas, escaparHtml(fechas)) +
                         filaTabla('Motivo', escaparHtml(motivo))
                     )}
                 `),

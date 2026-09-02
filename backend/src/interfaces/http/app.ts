@@ -26,7 +26,6 @@ import { PrismaSolicitudVacacionesRepository } from '../../infraestructure/datab
 import { PrismaAdminRepository } from '../../infraestructure/database/repositories/PrismaAdminRepository';
 import { PrismaImportacionNominaRepository } from '../../infraestructure/database/repositories/PrismaImportacionNominaRepository';
 import { PrismaImportacionCorreosJefesRepository } from '../../infraestructure/database/repositories/PrismaImportacionCorreosJefesRepository';
-import { PrismaPlanificacionVacacionesRepository } from '../../infraestructure/database/repositories/PrismaPlanificacionVacacionesRepository';
 import { registerAdminRoutes } from './routes/admin.routes';
 import { registerJefeRoutes } from './routes/jefe.routes';
 
@@ -74,7 +73,6 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
     const solicitudRepo = new PrismaSolicitudVacacionesRepository(prisma);
     const importacionNominaRepo = new PrismaImportacionNominaRepository(prisma);
     const importacionCorreosRepo = new PrismaImportacionCorreosJefesRepository(prisma);
-    const planificacionRepo = new PrismaPlanificacionVacacionesRepository(prisma);
     const tokenRepo = new PrismaTokenActivacionRepository(prisma);
     const passwordHasher = new BcryptPasswordHasher();
     const idGenerator = new CryptoIdGenerator();
@@ -87,7 +85,7 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
         registerEmpleadosRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo });
         registerRevisionRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, enlaceGenerator });
         registerAdminRoutes(api, {adminRepo, empleadoRepo, saldoRepo, solicitudRepo, importacionNominaRepo, importacionCorreosRepo, passwordHasher, idGenerator})
-        registerJefeRoutes(api, { empleadoRepo, saldoRepo, planificacionRepo, idGenerator });
+        registerJefeRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, enlaceGenerator, emailNotifier });
     }, { prefix: '/api' });
 
     // En producción, la imagen de Docker copia el build del frontend a ./public

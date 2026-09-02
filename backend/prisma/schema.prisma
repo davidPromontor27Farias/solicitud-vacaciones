@@ -139,6 +139,9 @@ model DiaSolicitado {
   solicitudId String              @map("solicitud_id")
   solicitud   SolicitudVacaciones @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
   fecha       DateTime            @db.Date
+  // Permite revocar solo una parte de los dias de una solicitud aprobada (ej. de 5 dias
+  // solicitados, revocar solo los 2 que aun no ocurren). Null = el dia sigue vigente.
+  revocadoAt  DateTime?           @map("revocado_at")
 
   @@unique([solicitudId, fecha])
   @@index([fecha])

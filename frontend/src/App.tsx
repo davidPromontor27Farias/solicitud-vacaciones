@@ -13,7 +13,6 @@ import { JefeLayout } from './components/JefeLayout';
 import { LoginPage } from './pages/LoginPage';
 import { ActivarCuentaPage } from './pages/ActivarCuentaPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { EquipoPage } from './pages/EquipoPage';
 import { RevisarSolicitudPage } from './pages/RevisarSolicitudPage';
 import { RecuperarPasswordPage } from './pages/RecuperarPasswordPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
@@ -45,7 +44,6 @@ export default function App() {
                         <Route element={<RutaProtegida />}>
                             <Route element={<Layout />}>
                                 <Route path="/" element={<DashboardPage />} />
-                                <Route path="/equipo"  element={<EquipoPage/>}/>
                             </Route>
                         </Route>
                         <Route path="/admin/login" element={<AdminLoginPage />} />

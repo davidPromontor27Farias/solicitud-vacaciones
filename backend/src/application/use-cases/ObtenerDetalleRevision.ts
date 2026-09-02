@@ -67,7 +67,7 @@ export class ObtenerDetalleRevision {
             if (otra.estatus !== 'aprobada' && otra.estatus !== 'pendiente') continue;
 
             const nombre = nombrePorId.get(otra.empleadoId) ?? 'Otro empleado';
-            for (const d of otra.dias.map((f) => f.toISOString().slice(0, 10))) {
+            for (const d of otra.diasActivos.map((f) => f.toISOString().slice(0, 10))) {
                 // listarPorEquipo filtra qué SOLICITUDES califican por el rango de fechas,
                 // pero devuelve TODOS los días de cada una — se recorta aquí para no filtrar
                 // días de meses fuera del rango consultado.

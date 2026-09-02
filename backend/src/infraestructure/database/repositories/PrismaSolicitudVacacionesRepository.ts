@@ -14,7 +14,7 @@ type SolicitudConDias = {
     revocadoPorId: string | null;
     createdAt: Date;
     resueltoAt: Date | null;
-    diasSolicitados: {fecha: Date}[];
+    diasSolicitados: {fecha: Date; revocadoAt: Date | null}[];
 }
 
 function toDomain(row: SolicitudConDias): SolicitudVacaciones{
@@ -23,6 +23,7 @@ function toDomain(row: SolicitudConDias): SolicitudVacaciones{
         empleadoId: row.empleadoId,
         estatus: row.estatus,
         dias: row.diasSolicitados.map(d => d.fecha),
+        diasRevocados: row.diasSolicitados.filter(d => d.revocadoAt !== null).map(d => d.fecha),
         backupNombre: row.backupNombre,
         motivoRevocacion: row.motivoRevocacion,
         motivoRechazo: row.motivoRechazo,
@@ -103,6 +104,15 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
         return rows.map(toDomain);
     }
 
+    async listarPendientesPorJefeDirecto(jefeDirectoId: string): Promise<SolicitudVacaciones[]> {
+        const rows = await this.prisma.solicitudVacaciones.findMany({
+            where: { empleado: { jefeDirectoId }, estatus: 'pendiente' },
+            include: { diasSolicitados: { orderBy: { fecha: 'asc' } } },
+            orderBy: { createdAt: 'desc' },
+        });
+        return rows.map(toDomain);
+    }
+
     async listarPorEquipo(jefeDirectoId: string, desde: Date, hasta: Date): Promise<SolicitudVacaciones[]> {
         const rows = await this.prisma.solicitudVacaciones.findMany({
             where: {
@@ -112,6 +122,24 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
             include: {diasSolicitados: {orderBy: {fecha: 'asc'}}},
         });
         return rows.map(toDomain)
+    }
+
+    async listarPorJefeMatricial(jefeMatricialId: string, desde: Date, hasta: Date): Promise<SolicitudVacaciones[]> {
+        const rows = await this.prisma.solicitudVacaciones.findMany({
+            where: {
+                empleado: {jefeMatricialId},
+                diasSolicitados: {some: {fecha: {gte: desde, lte: hasta}}},
+            },
+            include: {diasSolicitados: {orderBy: {fecha: 'asc'}}},
+        });
+        return rows.map(toDomain)
+    }
+
+    async marcarDiasRevocados(solicitudId: string, dias: Date[]): Promise<void> {
+        await this.prisma.diaSolicitado.updateMany({
+            where: { solicitudId, fecha: { in: dias } },
+            data: { revocadoAt: new Date() },
+        });
     }
 
     async listarPorEstatus(filtro: FiltroPorEstatus): Promise<ResultadoPaginado<SolicitudVacaciones>> {

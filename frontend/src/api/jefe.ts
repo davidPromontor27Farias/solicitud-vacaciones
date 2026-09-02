@@ -66,24 +66,43 @@ export function obtenerArbolMatricial(): Promise<NodoMatricial> {
     return apiFetchJefe('/jefe/matricial');
 }
 
-export interface Planificacion {
-    id: string;
+export interface VacacionAprobadaEquipo {
+    solicitudId: string;
     empleadoId: string;
-    fecha: string;
-    nota: string | null;
+    empleadoNombre: string;
+    dias: string[];
 }
 
-export function obtenerPlanificacion(): Promise<Planificacion[]> {
-    return apiFetchJefe('/jefe/planificacion');
+// Vacaciones ya aprobadas de los subordinados directos y matriciales del jefe: para
+// llevar control de quien tiene vacaciones encima, y desde donde se pueden revocar.
+export function obtenerVacacionesEquipo(): Promise<VacacionAprobadaEquipo[]> {
+    return apiFetchJefe('/jefe/vacaciones-equipo');
 }
 
-export function crearPlanificacion(empleadoId: string, fecha: string, nota?: string): Promise<Planificacion> {
-    return apiFetchJefe('/jefe/planificacion', {
+export interface RevocarVacacionResultado {
+    id: string;
+    estatus: string;
+    diasActivos: string[];
+}
+
+// dias: si se omite, se revoca todo el periodo activo. Si se especifica, solo esos dias
+// (ej. de 5 dias solicitados, revocar solo los 2 que aun no han pasado).
+export function revocarVacacionEquipo(solicitudId: string, motivo: string, dias?: string[]): Promise<RevocarVacacionResultado> {
+    return apiFetchJefe(`/jefe/vacaciones-equipo/${solicitudId}/revocar`, {
         method: 'POST',
-        body: JSON.stringify({ empleadoId, fecha, nota: nota || undefined }),
+        body: JSON.stringify({ motivo, dias }),
     });
 }
 
-export function eliminarPlanificacion(id: string): Promise<void> {
-    return apiFetchJefe(`/jefe/planificacion/${id}`, { method: 'DELETE' });
+export interface NotificacionSolicitud {
+    solicitudId: string;
+    empleadoNombre: string;
+    dias: string[];
+    createdAt: string;
+    enlaceToken: string;
+}
+
+// enlaceToken lleva a /revisar/:token, la misma pantalla que abre el enlace del correo.
+export function obtenerNotificacionesJefe(): Promise<NotificacionSolicitud[]> {
+    return apiFetchJefe('/jefe/notificaciones');
 }
