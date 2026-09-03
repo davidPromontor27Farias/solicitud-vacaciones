@@ -100,7 +100,10 @@ export class AprobarSolicitud {
             });
         }
 
-        if (empleado.recibeNotificacionesMatricial && empleado.jefeMatricialId) {
+        // Si el jefe matricial es la misma persona que el jefe directo (quien acaba de
+        // aprobar), no tiene sentido mandarle una notificacion invitandolo a declinar su
+        // propia aprobacion.
+        if (empleado.recibeNotificacionesMatricial && empleado.jefeMatricialId && empleado.jefeMatricialId !== empleado.jefeDirectoId) {
             const jefeMatricial = await this.empleadoRepo.buscarPorId(empleado.jefeMatricialId);
             if (jefeMatricial?.correoParaSolicitudes) {
 

@@ -1,5 +1,3 @@
-
-
 export interface SaldoVacacionesProps {
     id: string;
     empleadoId: string;
@@ -12,7 +10,9 @@ export interface SaldoVacacionesProps {
     fechaLimiteDisfrute: Date;
 }
 
-export const DIAS_UMBRAL_CRITICO = 30;
+export const MESES_UMBRAL_CRITICO = 6;
+
+
 
 export class SaldoVacaciones {
     constructor(private props: SaldoVacacionesProps) {}
@@ -36,7 +36,16 @@ export class SaldoVacaciones {
     }
 
     estaCritico(fecha: Date): boolean {
-        return !this.estaVencido(fecha) && this.diasPorVencer(fecha) <= DIAS_UMBRAL_CRITICO;
+        if(this.estaVencido(fecha)) return false;
+        const anioLimite = fecha.getUTCFullYear();
+        const mesLimite = fecha.getUTCMonth() + MESES_UMBRAL_CRITICO;
+        // Si el mes destino tiene menos dias que el actual (ej. 31 de agosto + 6 meses
+        // cae en febrero), se recorta al ultimo dia de ese mes en vez de desbordar al
+        // mes siguiente (lo que alargaria la ventana "critica" unos dias de mas).
+        const ultimoDiaMesLimite = new Date(Date.UTC(anioLimite, mesLimite + 1, 0)).getUTCDate();
+        const diaLimite = Math.min(fecha.getUTCDate(), ultimoDiaMesLimite);
+        const limite = new Date(Date.UTC(anioLimite, mesLimite, diaLimite));
+        return this.props.fechaLimiteDisfrute <= limite;
     }
 
 

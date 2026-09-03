@@ -297,7 +297,7 @@ export function JefeCalendarioPage() {
                         <h1 className="text-lg font-semibold text-white capitalize">{nombreMes}</h1>
                         <p className="text-xs text-white/50 flex items-center gap-1.5 mt-0.5">
                             <CalendarCheck size={12} />
-                            Vacaciones ya aprobadas de tu equipo — haz clic en un nombre para revocar
+                            Vacaciones ya aprobadas de tu equipo — Si requieres revocar algun en especifico, toca el periodo en el calendario.
                         </p>
                     </div>
                     <div className="flex items-center gap-1.5">

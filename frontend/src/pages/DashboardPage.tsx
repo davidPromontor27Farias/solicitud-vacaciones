@@ -22,12 +22,14 @@ import { crearSolicitud, obtenerMisSolicitudes, type SolicitudResumen } from '..
 import { obtenerPerfil, type PerfilEmpleado } from '../api/empleados';
 import { ApiError } from '../api/client';
 import { SelectorDias } from '../components/SelectorDias';
-import { formatearDiasComoRangos } from '../utils/fechas';
+import { formatearDiasComoRangos, diasFinDeMes } from '../utils/fechas';
 import { dividirNombres } from '../utils/texto';
 
 
+
+
 const ESTADO_SALDO_ESTILOS: Record<string, { bg: string; text: string; label: string }> = {
-  disponible: { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: 'Disponible' },
+  disponible: { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: 'Vigente' },
   proximo: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', label: 'Próximo a liberar' },
   vencido: { bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: 'Vencido' },
 };
@@ -145,6 +147,8 @@ export function DashboardPage() {
       setEnviando(false);
     }
   }
+
+  const finDeMesSeleccionados = diasFinDeMes(diasSeleccionados);
 
   return (
     <div className="space-y-6">
@@ -318,6 +322,13 @@ export function DashboardPage() {
                 <h2 className="text-lg font-bold text-gray-900">Nueva Solicitud de Vacaciones</h2>
             </div>
 
+            <div className="bg-blue-50 p-3 rounded-xl flex items-start gap-2 p-6">
+              <AlertCircle className="w-4 h-4 text-green-700 mt-0.5 shrink-0" />
+                <p className="text-xs text-green-700">
+                  Para solicitar vacaciones, debes de solicitarlos con  dias de antelación previo a la fecha solicitada.
+                </p>
+            </div>
+
             <div className="flex flex-col lg:flex-row gap-6">
                 <div className="flex-1">
                 <SelectorDias seleccionados={diasSeleccionados} onChange={setDiasSeleccionados} />
@@ -339,12 +350,17 @@ export function DashboardPage() {
                     </p>
                 </div>
 
-                <div className="bg-blue-50 p-3 rounded-xl flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-                    <p className="text-xs text-blue-700">
-                      No puedes seleccionar domingos ni días con más de 3 días de antigüedad.
-                    </p>
-                </div>
+                {
+                  finDeMesSeleccionados.length > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0"/>
+                      <p className="text-xs text-amber-700">
+                        Estás solicitando {finDeMesSeleccionados.length === 1 ? 'un día de fin de mes' : 'días de fin de mes'} ({formatearDiasComoRangos(finDeMesSeleccionados)}). Tu jefe directo podria necesitarte trabajando esos días por cierre de mes.
+                      </p>
+                    </div>
+                  )
+                }
+
 
                 {exitoForm && (
                     <div className="bg-green-50 p-3 rounded-xl flex items-center gap-2 text-green-700 text-sm">

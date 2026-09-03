@@ -40,6 +40,10 @@ function formatearRango(inicio: Date, fin: Date, anioActual: number): string {
     return `del ${inicio.getUTCDate()} de ${MESES[inicio.getUTCMonth()]} de ${inicio.getUTCFullYear()} al ${fin.getUTCDate()} de ${MESES[fin.getUTCMonth()]} de ${fin.getUTCFullYear()}`;
 }
 
+export const diasFinDeMes = (dias: string[]): string[] => {
+    return dias.filter((iso) => Number(iso.slice(8, 10)) >= 29)
+}
+
 export function formatearDiasComoRangos(dias: string[]): string {
     if (dias.length === 0) return '';
 

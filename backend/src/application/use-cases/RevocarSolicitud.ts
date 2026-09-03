@@ -6,6 +6,16 @@ import { SolicitudVacaciones } from "../../domain/entities/SolicitudVacaciones";
 import { EmailNotifier } from "../ports/EmailNotifier";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../shared/errors";
 
+function deduplicarDias(dias: Date[]): Date[] {
+    const vistos = new Set<number>();
+    return dias.filter((d) => {
+        const t = d.getTime();
+        if (vistos.has(t)) return false;
+        vistos.add(t);
+        return true;
+    });
+}
+
 export interface RevocarSolicitudInput {
     solicitudId: string;
     revocadoPorId: string;
@@ -39,7 +49,9 @@ export class RevocarSolicitud {
             throw new UnauthorizedError('No tienes permiso para revocar esta solicitud');
         }
 
-        const diasARevocar = input.dias ?? solicitud.diasActivos;
+        // Se deduplica por si el cliente manda la misma fecha repetida: sin esto se
+        // restituirian/contarian de mas los dias duplicados.
+        const diasARevocar = deduplicarDias(input.dias ?? solicitud.diasActivos);
 
         try {
             solicitud.revocarDias(diasARevocar, input.motivo, input.revocadoPorId);
@@ -100,7 +112,9 @@ export class RevocarSolicitud {
 
         const esDirectoQuienRevoco = revocadoPorId === empleado.jefeDirectoId;
         const otroJefeId = esDirectoQuienRevoco ? empleado.jefeMatricialId : empleado.jefeDirectoId;
-        if (empleado.recibeNotificacionesMatricial && otroJefeId) {
+        // Si el jefe directo y el matricial son la misma persona, no se le manda una
+        // segunda notificacion de "el otro jefe" sobre su propia accion.
+        if (empleado.recibeNotificacionesMatricial && otroJefeId && otroJefeId !== revocadoPorId) {
             const otroJefe = await this.empleadoRepo.buscarPorId(otroJefeId);
             if (otroJefe?.correoParaSolicitudes) {
                 await this.emailNotifier.encolar({

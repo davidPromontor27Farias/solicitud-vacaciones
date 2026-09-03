@@ -741,7 +741,7 @@ export function AdminDashboardPage() {
                 <div className={`${GLASS} p-10 rounded-2xl text-center`}>
                     <ShieldCheck className="w-12 h-12 text-emerald-300 mx-auto mb-3" />
                     <p className="text-white font-medium">Todo en orden</p>
-                    <p className="text-white/60 text-sm mt-1">No hay saldos vencidos ni próximos a vencer en los próximos 30 días.</p>
+                    <p className="text-white/60 text-sm mt-1">No hay saldos vencidos ni próximos a vencer en los proximos 6 meses</p>
                 </div>
             )}
 
@@ -831,7 +831,7 @@ export function AdminDashboardPage() {
                         <div className={`${GLASS} p-10 rounded-2xl text-center`}>
                             <ShieldCheck className="w-10 h-10 text-emerald-300 mx-auto mb-3" />
                             <p className="text-white/60 text-sm">
-                                {esVencidoActivo ? 'No hay saldos vencidos.' : 'No hay saldos por vencer en los próximos 30 días.'}
+                                {esVencidoActivo ? 'No hay saldos vencidos.' : 'No hay saldos por vencer en los próximos 6 meses.'}
                             </p>
                         </div>
                     ) : departamentoSeleccionado ? (

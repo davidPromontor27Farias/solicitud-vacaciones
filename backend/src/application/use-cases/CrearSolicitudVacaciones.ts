@@ -18,7 +18,9 @@ function inicioDelDiaUtc(fecha: Date): Date {
     return new Date(Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth(), fecha.getUTCDate()));
 }
 
-const DIAS_ATRAS_PERMITIDOS = 3;
+// Politica de vacaciones: toda solicitud debe hacerse con un minimo de 5 dias de
+// anticipacion (ni hoy ni los proximos 4 dias se pueden solicitar).
+const DIAS_ANTICIPACION_MINIMA = 5;
 
 export class CrearSolicitudVacaciones {
     constructor(
@@ -39,9 +41,9 @@ export class CrearSolicitudVacaciones {
         const rango = RangoDias.crear(input.dias);
 
         const hoy = inicioDelDiaUtc(new Date());
-        const limiteAtras = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate() - DIAS_ATRAS_PERMITIDOS));
-        if (inicioDelDiaUtc(rango.primerDia) < limiteAtras) {
-            throw new ValidationError(`No puedes solicitar días con más de ${DIAS_ATRAS_PERMITIDOS} días de antigüedad`);
+        const primerDiaPermitido = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate() + DIAS_ANTICIPACION_MINIMA));
+        if (inicioDelDiaUtc(rango.primerDia) < primerDiaPermitido) {
+            throw new ValidationError(`Debes solicitar tus vacaciones con al menos ${DIAS_ANTICIPACION_MINIMA} días de anticipación`);
         }
 
         const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id)

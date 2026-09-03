@@ -5,6 +5,7 @@ import { ApiError } from '../api/client';
 import { CalendarioColisiones } from '../components/CalendarioColisiones';
 import { PanelEquipoMes } from '../components/PanelEquipoMes';
 import { dividirNombres } from '../utils/texto';
+import {diasFinDeMes} from '../utils/fechas';
 
 const ESTATUS_ESTILOS: Record<string, string> = {
     pendiente: 'bg-yellow-100 text-yellow-800',
@@ -128,7 +129,9 @@ export function RevisarSolicitudPage() {
                     {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
                     {mensaje && <p className="text-sm text-green-700 mb-3">{mensaje}</p>}
 
-                    {detalle && mesActual && (
+                    {detalle && mesActual && (() => {
+                    const finDeMes = diasFinDeMes(detalle.dias);
+                    return (
                     <div className="space-y-4">
                         <div>
                             <p className="text-sm text-gray-900 font-medium">{detalle.empleadoNombre}</p>
@@ -191,6 +194,15 @@ export function RevisarSolicitudPage() {
                                         <li key={dia}>{dia}: {nombres.join(', ')}</li>
                                     ))}
                                 </ul>
+                            </div>
+                        )}
+
+                        {finDeMes.length > 0 && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm text-amber-700">
+                                <p className="font-medium">
+                                    Esta solicitud incluye {finDeMes.length === 1 ? 'un día de fin de mes' : 'días de fin de mes'}: {finDeMes.join(', ')}.
+                                </p>
+                                <p className="text-xs mt-0.5">Podrías necesitar a este empleado trabajando por cierre de mes.</p>
                             </div>
                         )}
 
@@ -310,7 +322,8 @@ export function RevisarSolicitudPage() {
                             </div>
                         )}
                     </div>
-                    )}
+                    );
+                    })()}
                 </div>
 
                 {detalle && mesActual && (
