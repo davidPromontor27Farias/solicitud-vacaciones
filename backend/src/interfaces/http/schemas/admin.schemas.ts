@@ -19,3 +19,12 @@ export const reporteSolicitudesQuerySchema = z.object({
     estatus: z.enum(['pendiente', 'aprobada', 'rechazada', 'revocada']),
     porPagina: z.coerce.number().int().min(1).max(20000).default(10000),
 })
+
+export const reportePeriodoQuerySchema = z.object({
+    desde: z.coerce.date(),
+    hasta: z.coerce.date(),
+}).refine((datos) => datos.hasta >= datos.desde, {
+    message: '"hasta" no puede ser anterior a "desde"',
+    path: ['hasta'], 
+})
+

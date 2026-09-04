@@ -135,6 +135,21 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
         return rows.map(toDomain)
     }
 
+    async listarPorPeriodo(desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>{
+        const rows = await this.prisma.solicitudVacaciones.findMany({
+            where: {
+                diasSolicitados: {some: {fecha: {gte: desde, lte: hasta}}}
+
+            },
+            include: {diasSolicitados: {orderBy: {fecha: 'asc'}}}
+
+        })
+
+        return rows.map(toDomain)
+        
+    }
+
+
     async marcarDiasRevocados(solicitudId: string, dias: Date[]): Promise<void> {
         await this.prisma.diaSolicitado.updateMany({
             where: { solicitudId, fecha: { in: dias } },

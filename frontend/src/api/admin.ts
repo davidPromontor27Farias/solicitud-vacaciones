@@ -199,3 +199,24 @@ export async function descargarReporteSolicitudes(estatus: EstatusSolicitud): Pr
     enlace.click();
     URL.revokeObjectURL(url);
 }
+
+export async function descargarReporteVacacionesPeriodo(desde: string, hasta: string): Promise<void> {
+    const token = getAdminToken();
+    const params = new URLSearchParams({ desde, hasta });
+    const response = await fetch(`/api/admin/nomina/reportes/vacaciones-periodo?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+
+    if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new ApiError(data?.error ?? 'Error inesperado', response.status, data?.detalles);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = `vacaciones_${desde}_a_${hasta}.xlsx`;
+    enlace.click();
+    URL.revokeObjectURL(url);
+}

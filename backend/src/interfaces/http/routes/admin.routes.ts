@@ -9,6 +9,7 @@ import { ListarVacacionesCriticas } from "../../../application/use-cases/ListarV
 import { ObtenerDetalleEmpleadoAdmin } from "../../../application/use-cases/ObtenerDetalleEmpleadoAdmin";
 import { ActualizarCorreosJefes } from "../../../application/use-cases/ActualizarCorreosJefes";
 import { ListarSolicitudesPorEstatus } from "../../../application/use-cases/ListarSolicitudesPorEstatus";
+import {ExportarSaldosSap} from '../../../application/use-cases/ExportarSaldosSap';
 import { ImportarReporteVacaciones } from "../../../application/use-cases/ImportarReporteVacaciones";
 import { ListarHistorialCargas } from "../../../application/use-cases/ListarHistorialCargas";
 import { IdGenerator } from "../../../application/ports/IdGenerator";
@@ -20,7 +21,7 @@ import { ImportacionNominaRepository } from "../../../domain/repositories/Import
 import { ImportacionCorreosJefesRepository } from "../../../domain/repositories/ImportacionCorreosJefesRepository";
 import { authenticateAdmin } from "../middlewares/authenticateAdmin";
 import { authenticateAdminNominas } from "../middlewares/authenticateAdminNominas";
-import { adminLoginSchema, solicitudesPorEstatusQuerySchema, reporteSolicitudesQuerySchema } from "../schemas/admin.schemas";
+import { adminLoginSchema, solicitudesPorEstatusQuerySchema, reporteSolicitudesQuerySchema, reportePeriodoQuerySchema } from "../schemas/admin.schemas";
 import { ValidationError } from "../../../shared/errors";
 
 
@@ -44,6 +45,7 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminDeps): void
     const obtenerDetalleEmpleadoAdmin = new ObtenerDetalleEmpleadoAdmin(deps.empleadoRepo, deps.saldoRepo);
     const actualizarCorreosJefes = new ActualizarCorreosJefes(deps.empleadoRepo, deps.importacionCorreosRepo);
     const listarSolicitudesPorEstatus = new ListarSolicitudesPorEstatus(deps.solicitudRepo, deps.empleadoRepo);
+    const exportarSaldosSap = new ExportarSaldosSap(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo)
     const importarReporteVacaciones = new ImportarReporteVacaciones(
         deps.empleadoRepo,
         deps.saldoRepo,
@@ -252,5 +254,104 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminDeps): void
             .header('Content-Disposition', `attachment; filename="solicitudes_${estatus}.xlsx"`)
             .send(buffer);
     });
+
+    app.get('/admin/nomina/reportes/vacaciones-periodo', {preHandler: authenticateAdminNominas}, async(request, reply) => {
+        const {desde, hasta} = reportePeriodoQuerySchema.parse(request.query);
+        const resultado = await exportarSaldosSap.ejecutar({desde, hasta});
+
+        const COLUMNAS_PERIODO = [
+            { header: 'No', key: 'numeroEmpleado', width: 12 },
+            { header: 'Nombre', key: 'nombre', width: 32 },
+            { header: 'Sociedad', key: 'sociedad', width: 14 },
+            { header: 'Puesto', key: 'puesto', width: 22 },
+            { header: 'Departamento', key: 'departamento', width: 22 },
+            { header: 'BACK UP', key: 'backupNombre', width: 22 },
+            { header: 'JEFE INMEDIATO', key: 'jefeInmediato', width: 26 },
+            { header: 'JEFE MATRICIAL', key: 'jefeMatricial', width: 26 },
+            { header: 'Cantidad contingente', key: 'diasPorLey', width: 18 },
+            { header: 'Liq.contingentes', key: 'diasDisfrutados', width: 16 },
+            { header: 'Inicio de validez', key: 'inicioValidez', width: 16 },
+            { header: 'Fin de validez', key: 'finValidez', width: 16 },
+            { header: 'Inicio liquidación', key: 'fechaVencimiento', width: 18 },
+            { header: 'Fecha Limite para Disfrutar', key: 'fechaLimiteDisfrute', width: 20 },
+        ];
+        const COLUMNAS_FECHA = new Set(['inicioValidez', 'finValidez', 'fechaVencimiento', 'fechaLimiteDisfrute']);
+
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Sistema de Solicitud de Vacaciones';
+        workbook.created = new Date();
+
+        const hoja = workbook.addWorksheet('Vacaciones del periodo', {
+            views: [{ state: 'frozen', ySplit: 1 }],
+        });
+        hoja.columns = COLUMNAS_PERIODO.map((columna) => ({ header: columna.header, key: columna.key, width: columna.width }));
+
+        const filaEncabezado = hoja.getRow(1);
+        filaEncabezado.eachCell((celda) => {
+            celda.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A8B2C' } };
+            celda.alignment = { vertical: 'middle', horizontal: 'left' };
+            celda.border = { bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } } };
+        });
+        filaEncabezado.height = 20;
+
+        resultado.forEach((s, indice) => {
+            const fila = hoja.addRow({
+                numeroEmpleado: s.numeroEmpleado,
+                nombre: s.nombre,
+                sociedad: s.sociedad ?? '—',
+                puesto: s.puesto ?? '—',
+                departamento: s.departamento ?? '—',
+                backupNombre: s.backupNombre ?? '—',
+                jefeInmediato: s.jefeInmediato ?? '—',
+                jefeMatricial: s.jefeMatricial ?? '—',
+                diasPorLey: s.diasPorLey,
+                diasDisfrutados: s.diasDisfrutados,
+                inicioValidez: s.inicioValidez,
+                finValidez: s.finValidez,
+                fechaVencimiento: s.fechaVencimiento,
+                fechaLimiteDisfrute: s.fechaLimiteDisfrute,
+            });
+
+            COLUMNAS_PERIODO.forEach((columna, columnaIndice) => {
+                if (COLUMNAS_FECHA.has(columna.key)) {
+                    fila.getCell(columnaIndice + 1).numFmt = 'dd/mm/yyyy';
+                }
+            });
+            fila.getCell('diasPorLey').alignment = { horizontal: 'center' };
+            fila.getCell('diasDisfrutados').alignment = { horizontal: 'center' };
+            fila.getCell('diasDisfrutados').font = { bold: true, color: { argb: 'FF4A8B2C' } };
+
+            if (indice % 2 === 1) {
+                fila.eachCell((celda) => {
+                    celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+                });
+            }
+            fila.eachCell((celda) => {
+                celda.border = { bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
+                celda.alignment = { ...celda.alignment, vertical: 'middle' };
+            });
+        });
+
+        hoja.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: COLUMNAS_PERIODO.length } };
+
+        if (resultado.length === 0) {
+            hoja.mergeCells(2, 1, 2, COLUMNAS_PERIODO.length);
+            const celdaVacia = hoja.getCell(2, 1);
+            celdaVacia.value = 'Sin registros con actividad en este periodo.';
+            celdaVacia.font = { italic: true, color: { argb: 'FF9CA3AF' } };
+        }
+
+        const buffer = await workbook.xlsx.writeBuffer();
+
+        const desdeStr = desde.toISOString().slice(0, 10);
+        const hastaStr = hasta.toISOString().slice(0, 10);
+
+        reply
+            .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            .header('Content-Disposition', `attachment; filename="vacaciones_${desdeStr}_a_${hastaStr}.xlsx"`)
+            .send(buffer);
+
+    })
 
 }

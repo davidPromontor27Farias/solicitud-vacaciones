@@ -33,4 +33,6 @@ export interface SolicitudVacacionesRepository{
     listarPorJefeMatricial(jefeMatricialId: string, desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>;
     listarPorEstatus(filtro: FiltroPorEstatus): Promise<ResultadoPaginado<SolicitudVacaciones>>;
     marcarDiasRevocados(solicitudId: string, dias: Date[]): Promise<void>;
+    listarPorPeriodo(desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>;
+
 }
