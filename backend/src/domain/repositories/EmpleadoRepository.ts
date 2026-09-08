@@ -22,5 +22,5 @@ export interface EmpleadoRepository {
     // undefined = no tocar ese campo (se dejó sin resolver, se preserva el vínculo previo).
     actualizarJefes(numeroEmpleado: string, datos: { jefeDirectoId?: string | null; jefeMatricialId?: string | null }): Promise<void>;
     actualizarCorreoPorNumeroEmpleado(numeroEmpleado: string, correo: string): Promise<boolean>;
-    actualizarCorreoAutorizacionPorNumeroEmpleado(numeroEmpleado: string, correo: string): Promise<boolean>;
+    actualizarCorreoAutorizacionPorNumeroEmpleado(numeroEmpleado: string, correo: string | null): Promise<boolean>;
 }

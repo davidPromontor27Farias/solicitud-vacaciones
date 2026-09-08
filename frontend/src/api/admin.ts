@@ -152,6 +152,29 @@ export function obtenerHistorialCargas(): Promise<HistorialCargaItem[]> {
     return apiFetchAdmin('/admin/nomina/historial');
 }
 
+export interface CorreoJefeItem {
+    empleadoId: string;
+    numeroEmpleado: string;
+    nombre: string;
+    departamento: string | null;
+    correoAutorizacion: string | null;
+}
+
+export function listarCorreosJefes(): Promise<CorreoJefeItem[]> {
+    return apiFetchAdmin('/admin/nomina/correos-jefes');
+}
+
+export function asignarCorreoJefe(numeroEmpleado: string, correo: string): Promise<void> {
+    return apiFetchAdmin(`/admin/nomina/correos-jefes/${numeroEmpleado}`, {
+        method: 'PUT',
+        body: JSON.stringify({ correo }),
+    });
+}
+
+export function eliminarCorreoJefe(numeroEmpleado: string): Promise<void> {
+    return apiFetchAdmin(`/admin/nomina/correos-jefes/${numeroEmpleado}`, { method: 'DELETE' });
+}
+
 export interface SolicitudPorEstatus {
     id: string;
     empleadoId: string;

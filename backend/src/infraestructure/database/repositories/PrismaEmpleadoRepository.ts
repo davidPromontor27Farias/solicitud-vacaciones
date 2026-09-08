@@ -107,7 +107,7 @@ export class PrismaEmpleadoRepository implements EmpleadoRepository{
         }
     }
 
-    async actualizarCorreoAutorizacionPorNumeroEmpleado(numeroEmpleado: string, correo: string): Promise<boolean> {
+    async actualizarCorreoAutorizacionPorNumeroEmpleado(numeroEmpleado: string, correo: string | null): Promise<boolean> {
         try {
             await this.prisma.empleado.update({
                 where: { numeroEmpleado },

@@ -25,6 +25,14 @@ export const reportePeriodoQuerySchema = z.object({
     hasta: z.coerce.date(),
 }).refine((datos) => datos.hasta >= datos.desde, {
     message: '"hasta" no puede ser anterior a "desde"',
-    path: ['hasta'], 
+    path: ['hasta'],
+})
+
+export const correoJefeParamsSchema = z.object({
+    numeroEmpleado: z.string().min(1),
+})
+
+export const correoJefeBodySchema = z.object({
+    correo: z.string().email(),
 })
 
