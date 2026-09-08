@@ -25,14 +25,14 @@ export interface ResultadoPaginado<T>{
 export interface SolicitudVacacionesRepository{
     crear(solicitud: SolicitudVacaciones): Promise<void>;
     buscarPorId(id: string): Promise<SolicitudVacaciones | null>;
-    actualizar(solicitud: SolicitudVacaciones): Promise<void>;
+    actualizar(solicitud: SolicitudVacaciones, tx?: unknown): Promise<void>;
     listarPorEmpleado(filtro: FiltroHistorial): Promise<ResultadoPaginado <SolicitudVacaciones>>;
     listarAprobadasPorEmpleado(empleadoId: string): Promise<SolicitudVacaciones[]>;
     listarPendientesPorJefeDirecto(jefeDirectoId: string): Promise<SolicitudVacaciones[]>;
     listarPorEquipo(jefeDirectoId: string, desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>;
     listarPorJefeMatricial(jefeMatricialId: string, desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>;
     listarPorEstatus(filtro: FiltroPorEstatus): Promise<ResultadoPaginado<SolicitudVacaciones>>;
-    marcarDiasRevocados(solicitudId: string, dias: Date[]): Promise<void>;
+    marcarDiasRevocados(solicitudId: string, dias: Date[], tx?: unknown): Promise<void>;
     listarPorPeriodo(desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>;
 
 }

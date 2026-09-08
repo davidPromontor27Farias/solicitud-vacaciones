@@ -5,6 +5,7 @@ import { SolicitudVacacionesRepository } from "../../domain/repositories/Solicit
 import { SolicitudVacaciones } from "../../domain/entities/SolicitudVacaciones";
 import { EmailNotifier } from "../ports/EmailNotifier";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../shared/errors";
+import { TransactionManager } from "../ports/TransactionManager";
 
 function deduplicarDias(dias: Date[]): Date[] {
     const vistos = new Set<number>();
@@ -32,6 +33,7 @@ export class RevocarSolicitud {
         private saldoRepo: SaldoVacacionesRepository,
         private solicitudRepo: SolicitudVacacionesRepository,
         private emailNotifier: EmailNotifier,
+        private txtManager: TransactionManager
     ) {}
 
     async ejecutar(input: RevocarSolicitudInput): Promise<SolicitudVacaciones> {
@@ -58,16 +60,19 @@ export class RevocarSolicitud {
         } catch (error) {
             throw new ValidationError(error instanceof Error ? error.message : 'No se pudo revocar la solicitud');
         }
-        await this.solicitudRepo.actualizar(solicitud);
-        await this.solicitudRepo.marcarDiasRevocados(solicitud.id, diasARevocar);
 
-        await this.restituirSaldo(empleado, diasARevocar);
+        await this.txtManager.ejecutar(async (tx) =>{
+            await this.solicitudRepo.actualizar(solicitud, tx);
+            await this.solicitudRepo.marcarDiasRevocados(solicitud.id, diasARevocar, tx);
+            await this.restituirSaldo(empleado, diasARevocar, tx);
+        })
+        
         await this.notificar(empleado, solicitud, input.revocadoPorId, diasARevocar);
 
         return solicitud;
     }
 
-    private async restituirSaldo(empleado: Empleado, diasARevocar: Date[]): Promise<void> {
+    private async restituirSaldo(empleado: Empleado, diasARevocar: Date[], tx?: unknown): Promise<void> {
         const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id);
         if (saldos.length === 0) {
             throw new ValidationError('El empleado no tiene periodos de saldo registrados');
@@ -89,7 +94,7 @@ export class RevocarSolicitud {
         for (const [saldoId, cantidad] of cantidadPorSaldoId) {
             const saldo = saldos.find((s) => s.id === saldoId)!;
             saldo.restituirDias(cantidad);
-            await this.saldoRepo.guardar(saldo);
+            await this.saldoRepo.guardar(saldo, tx);
         }
     }
 

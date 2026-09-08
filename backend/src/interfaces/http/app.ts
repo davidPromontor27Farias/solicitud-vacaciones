@@ -28,9 +28,10 @@ import { PrismaImportacionNominaRepository } from '../../infraestructure/databas
 import { PrismaImportacionCorreosJefesRepository } from '../../infraestructure/database/repositories/PrismaImportacionCorreosJefesRepository';
 import { registerAdminRoutes } from './routes/admin.routes';
 import { registerJefeRoutes } from './routes/jefe.routes';
+import { PrismaTransactionManager } from '../../infraestructure/database/PrismaTransactionManager';
 
 export function buildApp(prisma: PrismaClient): FastifyInstance {
-    const app = Fastify({ logger: false, maxParamLength: 1000 });
+    const app = Fastify({ logger: false, maxParamLength: 1000, trustProxy: true });
 
     const origenesPermitidos = [process.env.APP_URL, 'http://localhost:5173'].filter(
         (o): o is string => Boolean(o),
@@ -78,14 +79,15 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
     const idGenerator = new CryptoIdGenerator();
     const emailNotifier = new DirectEmailNotifier(prisma);
     const enlaceGenerator = new JwtEnlaceRevisionGenerator(process.env.JWT_SECRET!);
+    const txManager = new PrismaTransactionManager(prisma);
 
     app.register(async (api) => {
         registerAuthRoutes(api, { empleadoRepo, tokenRepo, passwordHasher, idGenerator, emailNotifier });
-        registerSolicitudesRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, idGenerator, enlaceGenerator });
+        registerSolicitudesRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, idGenerator, enlaceGenerator, txManager });
         registerEmpleadosRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo });
-        registerRevisionRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, enlaceGenerator });
+        registerRevisionRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, enlaceGenerator, txManager });
         registerAdminRoutes(api, {adminRepo, empleadoRepo, saldoRepo, solicitudRepo, importacionNominaRepo, importacionCorreosRepo, passwordHasher, idGenerator})
-        registerJefeRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, enlaceGenerator, emailNotifier });
+        registerJefeRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, enlaceGenerator, emailNotifier, txManager });
     }, { prefix: '/api' });
 
     // En producción, la imagen de Docker copia el build del frontend a ./public

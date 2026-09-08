@@ -7,6 +7,7 @@ import { SolicitudVacaciones } from "../../domain/entities/SolicitudVacaciones";
 import { EmailNotifier } from "../ports/EmailNotifier";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../shared/errors";
 import { dividirNombres } from "../../shared/texto";
+import {TransactionManager} from "../ports/TransactionManager";
 
 export interface AprobarSolicitudInput {
     solicitudId: string;
@@ -21,6 +22,7 @@ export class AprobarSolicitud {
         private solicitudRepo: SolicitudVacacionesRepository,
         private emailNotifier: EmailNotifier,
         private enlaceGenerator: EnlaceRevisionGenerator,
+        private txtManager: TransactionManager
     ) {}
 
     async ejecutar(input: AprobarSolicitudInput): Promise<SolicitudVacaciones> {
@@ -67,23 +69,27 @@ export class AprobarSolicitud {
             throw new ValidationError('El empleado ya no cuenta con suficientes días disponibles');
         }
 
-        let restante = solicitud.cantidadDias;
-        for (const saldo of vigentes) {
-            if (restante === 0) break;
-            const aDescontar = Math.min(saldo.diasPendientes, restante);
-            if (aDescontar > 0) {
-                saldo.descontarDias(aDescontar);
-                await this.saldoRepo.guardar(saldo);
-                restante -= aDescontar;
+        await this.txtManager.ejecutar(async (tx) => {
+            let restante = solicitud.cantidadDias;
+            for(const saldo of vigentes){
+                if(restante === 0) break;
+                const aDescontar = Math.min(saldo.diasPendientes, restante);
+                if(aDescontar > 0){
+                    saldo.descontarDias(aDescontar);
+                    await this.saldoRepo.guardar(saldo, tx);
+                    restante -= aDescontar;
+                }
             }
-        }
 
-        try {
-            solicitud.aprobar();
-        } catch (error) {
-            throw new ValidationError(error instanceof Error ? error.message : 'No se pudo aprobar la solicitud');
-        }
-        await this.solicitudRepo.actualizar(solicitud);
+            try {
+                solicitud.aprobar();
+
+            } catch(error){
+                throw new ValidationError(error instanceof Error ? error.message : 'No se pudo aporbar la solicitud');
+            }
+            
+            await this.solicitudRepo.actualizar(solicitud, tx);
+        })
 
         await this.notificar(empleado, solicitud);
 

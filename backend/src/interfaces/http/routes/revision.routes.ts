@@ -10,6 +10,7 @@ import { RechazarSolicitud } from '../../../application/use-cases/RechazarSolici
 import { aprobarSolicitudSchema, rechazarSolicitudSchema } from '../schemas/solicitudes.schemas';
 import { UnauthorizedError } from '../../../shared/errors';
 import { RevocarSolicitud } from '../../../application/use-cases/RevocarSolicitud';
+import { TransactionManager } from '../../../application/ports/TransactionManager';
 
 interface RevisionDeps {
     empleadoRepo: EmpleadoRepository;
@@ -17,13 +18,14 @@ interface RevisionDeps {
     solicitudRepo: SolicitudVacacionesRepository;
     emailNotifier: EmailNotifier;
     enlaceGenerator: EnlaceRevisionGenerator;
+    txManager: TransactionManager;
 }
 
 export function registerRevisionRoutes(app: FastifyInstance, deps: RevisionDeps): void {
     const obtenerDetalle = new ObtenerDetalleRevision(deps.empleadoRepo, deps.solicitudRepo);
-    const aprobarSolicitud = new AprobarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.enlaceGenerator);
+    const aprobarSolicitud = new AprobarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.enlaceGenerator, deps.txManager);
     const rechazarSolicitud = new RechazarSolicitud(deps.empleadoRepo, deps.solicitudRepo, deps.emailNotifier);
-    const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier);
+    const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.txManager);
 
     function verificarToken(token: string) {
         const payload = deps.enlaceGenerator.verificar(token);

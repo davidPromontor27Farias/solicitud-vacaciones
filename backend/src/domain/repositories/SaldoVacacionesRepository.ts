@@ -5,7 +5,7 @@ export interface SaldoVacacionesRepository {
   listarConDiasPendientes(): Promise<SaldoVacaciones[]>;
   listarTodos(): Promise<SaldoVacaciones[]>;
   crear(saldo: SaldoVacaciones): Promise<void>;
-  guardar(saldo: SaldoVacaciones): Promise<void>;
+  guardar(saldo: SaldoVacaciones, tx?: unknown): Promise<void>;
   eliminar(id: string): Promise<void>;
 }
 

@@ -60,9 +60,10 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
         return row ? toDomain(row) : null;
     }
 
-    async actualizar(solicitud: SolicitudVacaciones): Promise<void> {
+    async actualizar(solicitud: SolicitudVacaciones, tx?: unknown): Promise<void> {
+        const cliente = (tx as PrismaClient) ?? this.prisma;
         const props = solicitud.toProps();
-        await this.prisma.solicitudVacaciones.update({
+        await cliente.solicitudVacaciones.update({
             where: {id: props.id},
             data: {
                 estatus: props.estatus,
@@ -150,8 +151,9 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
     }
 
 
-    async marcarDiasRevocados(solicitudId: string, dias: Date[]): Promise<void> {
-        await this.prisma.diaSolicitado.updateMany({
+    async marcarDiasRevocados(solicitudId: string, dias: Date[], tx?: unknown): Promise<void> {
+        const cliente = (tx as PrismaClient) ?? this.prisma;
+        await cliente.diaSolicitado.updateMany({
             where: { solicitudId, fecha: { in: dias } },
             data: { revocadoAt: new Date() },
         });

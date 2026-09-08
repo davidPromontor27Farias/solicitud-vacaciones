@@ -64,9 +64,10 @@ export class PrismaSaldoVacacionesRepository implements SaldoVacacionesRepositor
         });
     }
 
-    async guardar(saldo: SaldoVacaciones): Promise<void> {
+    async guardar(saldo: SaldoVacaciones, tx?: unknown): Promise<void> {
+        const cliente = (tx as PrismaClient) ?? this.prisma;
         const props = saldo.toProps();
-        await this.prisma.saldoVacaciones.update({
+        await cliente.saldoVacaciones.update({
             where: { id: props.id },
             data: {
                 diasPorLey: props.diasPorLey,

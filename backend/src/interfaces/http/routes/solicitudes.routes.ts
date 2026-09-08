@@ -14,6 +14,7 @@ import { RevocarSolicitud } from '../../../application/use-cases/RevocarSolicitu
 import { aprobarSolicitudSchema } from '../schemas/solicitudes.schemas';
 import { ObtenerHistorialEmpleado } from '../../../application/use-cases/ObtenerHistorialEmpleado';
 import { ObtenerHistorialEquipo } from '../../../application/use-cases/ObtenerHistorialEquipo';
+import { TransactionManager } from '../../../application/ports/TransactionManager';
 
 interface SolicitudesDeps {
     empleadoRepo: EmpleadoRepository;
@@ -22,6 +23,7 @@ interface SolicitudesDeps {
     emailNotifier: EmailNotifier;
     idGenerator: IdGenerator;
     enlaceGenerator: EnlaceRevisionGenerator;
+    txManager: TransactionManager;
 }
 
 export function registerSolicitudesRoutes(app: FastifyInstance, deps: SolicitudesDeps): void {
@@ -34,9 +36,9 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
         deps.enlaceGenerator,
     );
 
-    const aprobarSolicitud = new AprobarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.enlaceGenerator);
+    const aprobarSolicitud = new AprobarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.enlaceGenerator, deps.txManager)
     const rechazarSolicitud = new RechazarSolicitud(deps.empleadoRepo, deps.solicitudRepo, deps.emailNotifier);
-    const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier);
+    const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.txManager);
     const obtenerHistorialEmpleado = new ObtenerHistorialEmpleado(deps.solicitudRepo);
     const obtenerHistorialEquipo = new ObtenerHistorialEquipo(deps.solicitudRepo);
 

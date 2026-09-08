@@ -13,6 +13,7 @@ import { EnlaceRevisionGenerator } from "../../../application/ports/EnlaceRevisi
 import { EmailNotifier } from "../../../application/ports/EmailNotifier";
 import { authenticateJefe } from "../middlewares/authenticateJefe";
 import { jefeLoginSchema, revocarVacacionesJefeSchema } from "../schemas/jefe.schemas";
+import { TransactionManager } from "../../../application/ports/TransactionManager";
 
 interface JefeDeps {
     empleadoRepo: EmpleadoRepository;
@@ -20,6 +21,7 @@ interface JefeDeps {
     solicitudRepo: SolicitudVacacionesRepository;
     enlaceGenerator: EnlaceRevisionGenerator;
     emailNotifier: EmailNotifier;
+    txManager: TransactionManager;
 }
 
 export function registerJefeRoutes(app: FastifyInstance, deps: JefeDeps): void {
@@ -29,7 +31,7 @@ export function registerJefeRoutes(app: FastifyInstance, deps: JefeDeps): void {
     const obtenerArbolMatricial = new ObtenerArbolMatricial(deps.empleadoRepo, deps.saldoRepo);
     const obtenerVacacionesAprobadasEquipo = new ObtenerVacacionesAprobadasEquipo(deps.solicitudRepo, deps.empleadoRepo);
     const obtenerNotificacionesJefe = new ObtenerNotificacionesJefe(deps.solicitudRepo, deps.empleadoRepo, deps.enlaceGenerator);
-    const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier);
+    const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.txManager);
 
     app.post('/jefe/login', {
         config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
