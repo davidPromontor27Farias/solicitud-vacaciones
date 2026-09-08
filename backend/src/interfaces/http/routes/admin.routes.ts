@@ -11,6 +11,7 @@ import { ActualizarCorreosJefes } from "../../../application/use-cases/Actualiza
 import { ListarCorreosJefes } from "../../../application/use-cases/ListarCorreosJefes";
 import { AsignarCorreoJefe } from "../../../application/use-cases/AsignarCorreoJefe";
 import { EliminarCorreoJefe } from "../../../application/use-cases/EliminarCorreoJefe";
+import { CrearJefe } from "../../../application/use-cases/CrearJefe";
 import { ListarSolicitudesPorEstatus } from "../../../application/use-cases/ListarSolicitudesPorEstatus";
 import {ExportarSaldosSap} from '../../../application/use-cases/ExportarSaldosSap';
 import { ImportarReporteVacaciones } from "../../../application/use-cases/ImportarReporteVacaciones";
@@ -24,7 +25,7 @@ import { ImportacionNominaRepository } from "../../../domain/repositories/Import
 import { ImportacionCorreosJefesRepository } from "../../../domain/repositories/ImportacionCorreosJefesRepository";
 import { authenticateAdmin } from "../middlewares/authenticateAdmin";
 import { authenticateAdminNominas } from "../middlewares/authenticateAdminNominas";
-import { adminLoginSchema, solicitudesPorEstatusQuerySchema, reporteSolicitudesQuerySchema, reportePeriodoQuerySchema, correoJefeParamsSchema, correoJefeBodySchema } from "../schemas/admin.schemas";
+import { adminLoginSchema, solicitudesPorEstatusQuerySchema, reporteSolicitudesQuerySchema, reportePeriodoQuerySchema, correoJefeParamsSchema, correoJefeBodySchema, crearJefeBodySchema } from "../schemas/admin.schemas";
 import { ValidationError } from "../../../shared/errors";
 
 
@@ -50,6 +51,7 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminDeps): void
     const listarCorreosJefes = new ListarCorreosJefes(deps.empleadoRepo);
     const asignarCorreoJefe = new AsignarCorreoJefe(deps.empleadoRepo);
     const eliminarCorreoJefe = new EliminarCorreoJefe(deps.empleadoRepo);
+    const crearJefe = new CrearJefe(deps.empleadoRepo);
     const listarSolicitudesPorEstatus = new ListarSolicitudesPorEstatus(deps.solicitudRepo, deps.empleadoRepo);
     const exportarSaldosSap = new ExportarSaldosSap(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo)
     const importarReporteVacaciones = new ImportarReporteVacaciones(
@@ -217,6 +219,12 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminDeps): void
 
     app.get('/admin/nomina/correos-jefes', { preHandler: authenticateAdminNominas }, async () => {
         return listarCorreosJefes.ejecutar();
+    });
+
+    app.post('/admin/nomina/correos-jefes/nuevo', { preHandler: authenticateAdminNominas }, async (request) => {
+        const datos = crearJefeBodySchema.parse(request.body);
+        await crearJefe.ejecutar(datos);
+        return { ok: true };
     });
 
     app.put('/admin/nomina/correos-jefes/:numeroEmpleado', { preHandler: authenticateAdminNominas }, async (request) => {

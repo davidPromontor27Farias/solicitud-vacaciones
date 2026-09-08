@@ -164,6 +164,20 @@ export function listarCorreosJefes(): Promise<CorreoJefeItem[]> {
     return apiFetchAdmin('/admin/nomina/correos-jefes');
 }
 
+export interface CrearJefeInput {
+    numeroEmpleado: string;
+    nombre: string;
+    departamento: string;
+    correo: string;
+}
+
+export function crearJefe(datos: CrearJefeInput): Promise<void> {
+    return apiFetchAdmin('/admin/nomina/correos-jefes/nuevo', {
+        method: 'POST',
+        body: JSON.stringify(datos),
+    });
+}
+
 export function asignarCorreoJefe(numeroEmpleado: string, correo: string): Promise<void> {
     return apiFetchAdmin(`/admin/nomina/correos-jefes/${numeroEmpleado}`, {
         method: 'PUT',

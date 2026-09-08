@@ -36,3 +36,10 @@ export const correoJefeBodySchema = z.object({
     correo: z.string().email(),
 })
 
+export const crearJefeBodySchema = z.object({
+    numeroEmpleado: z.string().min(1),
+    nombre: z.string().min(1),
+    departamento: z.string().min(1),
+    correo: z.string().email(),
+})
+

@@ -12,6 +12,7 @@ import {
     listarCorreosJefes,
     asignarCorreoJefe,
     eliminarCorreoJefe,
+    crearJefe,
     type ActualizarCorreosJefesResultado,
     type ImportarReporteVacacionesResultado,
     type HistorialCargaItem,
@@ -48,72 +49,95 @@ function formatearFecha(iso: string | null): string {
     });
 }
 
-function  ModalCorreoJefe({
+function ModalCorreoJefe({
     modo,
     item,
-    disponibles,
-    onClose, 
-    onGuardado
+    onClose,
+    onGuardado,
 }: {
     modo: 'agregar' | 'editar';
     item?: CorreoJefeItem;
-    disponibles: CorreoJefeItem[];
     onClose: () => void;
     onGuardado: () => void;
 }) {
     const [numeroEmpleado, setNumeroEmpleado] = useState(item?.numeroEmpleado ?? '');
+    const [nombre, setNombre] = useState(item?.nombre ?? '');
+    const [departamento, setDepartamento] = useState(item?.departamento ?? '');
     const [correo, setCorreo] = useState(item?.correoAutorizacion ?? '');
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const guardar = async() => {
-        if(!numeroEmpleado || !correo) return;
+    const camposCompletos = modo === 'agregar'
+        ? Boolean(numeroEmpleado && nombre && departamento && correo)
+        : Boolean(numeroEmpleado && correo);
+
+    const guardar = async () => {
+        if (!camposCompletos) return;
         setGuardando(true);
         setError(null);
-        try{
-            await asignarCorreoJefe(numeroEmpleado, correo);
+        try {
+            if (modo === 'agregar') {
+                await crearJefe({ numeroEmpleado, nombre, departamento, correo });
+            } else {
+                await asignarCorreoJefe(numeroEmpleado, correo);
+            }
             onGuardado();
-        }catch(err){
+        } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Error inesperado al guardar');
-        } finally{
+        } finally {
             setGuardando(false);
         }
-    }
+    };
 
     return (
-
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
             <div className={`${GLASS} bg-[#1f2430]/90 rounded-2xl p-6 w-full max-w-md space-y-4`}>
                 <div className="flex items-center justify-between">
                     <h3 className="text-white font-semibold">
-                        {modo === 'agregar' ? 'Agregar jefe' : 'Editar correo de jefe' }
+                        {modo === 'agregar' ? 'Agregar jefe' : 'Editar correo de jefe'}
                     </h3>
 
                     <button type="button" onClick={onClose} className="text-white/60 hover:text-white cursor-pointer">
-                        <X className="w-5 h-5"/>
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {modo === 'agregar' ? (
-                    <div>
-                        <label className="block text-white/60 text-xs mb-1">Empleado</label>
-                        <select
-                            value={numeroEmpleado}
-                            onChange={(e) => setNumeroEmpleado(e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 text-white text-sm rounded-lg px-3 py-2 [color-scheme:dark]"
-                        >
-                            <option value="">Selecciona un empleado</option>
-
-                            { disponibles.map((e)=> (
-                                <option key={e.empleadoId} value={e.numeroEmpleado}>
-                                    {e.numeroEmpleado} - {e.nombre}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    <>
+                        <div>
+                            <label className="block text-white/60 text-xs mb-1">No. de empleado</label>
+                            <input
+                                type="text"
+                                value={numeroEmpleado}
+                                onChange={(e) => setNumeroEmpleado(e.target.value)}
+                                placeholder="12345"
+                                className="w-full bg-white/10 border border-white/20 text-white text-sm rounded-lg px-3 py-2 placeholder:text-white/30"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-white/60 text-xs mb-1">Nombre</label>
+                            <input
+                                type="text"
+                                value={nombre}
+                                onChange={(e) => setNombre(e.target.value)}
+                                placeholder="Nombre completo"
+                                className="w-full bg-white/10 border border-white/20 text-white text-sm rounded-lg px-3 py-2 placeholder:text-white/30"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-white/60 text-xs mb-1">Departamento</label>
+                            <input
+                                type="text"
+                                value={departamento}
+                                onChange={(e) => setDepartamento(e.target.value)}
+                                placeholder="Departamento"
+                                className="w-full bg-white/10 border border-white/20 text-white text-sm rounded-lg px-3 py-2 placeholder:text-white/30"
+                            />
+                        </div>
+                    </>
                 ) : (
                     <div>
-                        <p className="text-white  text-sm font-medium">{item?.nombre}</p>
+                        <p className="text-white text-sm font-medium">{item?.nombre}</p>
                         <p className="text-white/50 text-xs">#{item?.numeroEmpleado}</p>
                     </div>
                 )}
@@ -129,14 +153,12 @@ function  ModalCorreoJefe({
                     />
                 </div>
 
-                {
-                    error && (
-                        <div className="flex items-center gap-2 text-red-200 text-sm ">
-                            <AlertCircle className="w-4 h-4 shrink-0"/>
-                            <span>{error}</span>
-                        </div>
-                    )
-                }
+                {error && (
+                    <div className="flex items-center gap-2 text-red-200 text-sm">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{error}</span>
+                    </div>
+                )}
 
                 <div className="flex justify-end gap-2 pt-2">
                     <button
@@ -150,17 +172,17 @@ function  ModalCorreoJefe({
                     <button
                         type="button"
                         onClick={guardar}
-                        disabled={guardando || !numeroEmpleado || !correo}
+                        disabled={guardando || !camposCompletos}
                         className="flex items-center gap-2 bg-linear-to-r from-[#4a8b2c] to-[#ee7624] text-white px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                    >   
-                        {guardando && <RefreshCw className="w-4 h-4 animate-spin"/>}
+                    >
+                        {guardando && <RefreshCw className="w-4 h-4 animate-spin" />}
                         Guardar
                     </button>
-
                 </div>
             </div>
         </div>
-    )}
+    );
+}
 
 
 function SeccionCorreosJefes() {
@@ -220,7 +242,6 @@ function SeccionCorreosJefes() {
     }
 
     const conCorreo = items.filter((i) => i.correoAutorizacion);
-    const sinCorreo = items.filter((i) => !i.correoAutorizacion);
     const busquedaNorm = busqueda.trim().toLowerCase();
     const filasVisibles = busquedaNorm ? conCorreo.filter((i) => i.nombre.toLowerCase().includes(busquedaNorm) || i.numeroEmpleado.includes(busquedaNorm)) : conCorreo;
 
@@ -298,14 +319,11 @@ function SeccionCorreosJefes() {
 
                             <button
                                 type="button"
-                                onClick={() => setModal({modo: "agregar"})}
-                                disabled={sinCorreo.length === 0}
-                                title={sinCorreo.length === 0 ? "Todos los empleados ya tienen correo asignado" : undefined}
-                                className="flex items-center gap-2 bg-linear-to-r from-[#4a8b2c] to-[#ee7624] text-white px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                onClick={() => setModal({ modo: 'agregar' })}
+                                className="flex items-center gap-2 bg-linear-to-r from-[#4a8b2c] to-[#ee7624] text-white px-4 py-2 rounded-xl text-sm font-medium cursor-pointer"
                             >
-                                <Plus className="w-4 h-4"/>
+                                <Plus className="w-4 h-4" />
                                 Agregar jefe
-
                             </button>
                         </div>
                     </div>
@@ -391,7 +409,6 @@ function SeccionCorreosJefes() {
                         <ModalCorreoJefe
                             modo={modal.modo}
                             item={modal.item}
-                            disponibles={sinCorreo}
                             onClose={() => setModal(null)}
                             onGuardado={() => {
                                 setModal(null)
