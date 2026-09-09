@@ -17,6 +17,10 @@ function deduplicarDias(dias: Date[]): Date[] {
     });
 }
 
+function inicioDelDiaUtc(fecha: Date): Date {
+    return new Date(Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth(), fecha.getUTCDate()));
+}
+
 export interface RevocarSolicitudInput {
     solicitudId: string;
     revocadoPorId: string;
@@ -54,6 +58,11 @@ export class RevocarSolicitud {
         // Se deduplica por si el cliente manda la misma fecha repetida: sin esto se
         // restituirian/contarian de mas los dias duplicados.
         const diasARevocar = deduplicarDias(input.dias ?? solicitud.diasActivos);
+        const hoy = inicioDelDiaUtc(new Date());
+        const diaNoFuturo = diasARevocar.find((dia) =>inicioDelDiaUtc(dia) <= hoy);
+        if(diaNoFuturo){
+            throw new ValidationError('Solo se pueden revocar días que aún no han ocurrido');
+        }
 
         try {
             solicitud.revocarDias(diasARevocar, input.motivo, input.revocadoPorId);
