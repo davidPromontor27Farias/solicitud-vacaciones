@@ -179,4 +179,13 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
             porPagina: filtro.porPagina,
         };
     }
+
+    async contarDiasRevocadosPorJefe(empleadoId: string, jefeId: string): Promise<number> {
+        return this.prisma.diaSolicitado.count({
+            where: {
+                revocadoAt: { not: null },
+                solicitud: { empleadoId, revocadoPorId: jefeId },
+            },
+        });
+    }
 }

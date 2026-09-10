@@ -243,7 +243,7 @@ export function DashboardPage() {
 
                 {perfil ? (
                 <div className='transition-opacity duration-300 starting:opacity-0'>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                     <div className="bg-linear-to-br from-[#4a8b2c]/5 to-[#4a8b2c]/10 p-4 rounded-xl border border-[#4a8b2c]/20">
                         <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Días disponibles</span>
@@ -264,6 +264,13 @@ export function DashboardPage() {
                         <TrendingDown className="w-5 h-5 text-[#ee7624]" />
                         </div>
                         <p className="text-3xl font-bold text-[#ee7624] mt-2">{perfil.totalDisfrutados}</p>
+                    </div>
+                    <div className="bg-linear-to-br from-red-500/5 to-red-500/10 p-4 rounded-xl border border-red-500/20">
+                        <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Revocados por tu jefe</span>
+                        <XCircle className="w-5 h-5 text-red-600" />
+                        </div>
+                        <p className="text-3xl font-bold text-red-600 mt-2">{perfil.diasRevocadosPorJefeDirecto}</p>
                     </div>
                     </div>
 

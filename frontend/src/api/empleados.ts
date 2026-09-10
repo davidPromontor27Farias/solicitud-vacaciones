@@ -34,6 +34,7 @@ export interface PerfilEmpleado {
     totalPendientes: number;
     totalDisfrutados: number;
     totalProgramados: number;
+    diasRevocadosPorJefeDirecto: number;
     vacacionesProgramadas: VacacionProgramada[];
 }
 

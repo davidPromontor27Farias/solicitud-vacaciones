@@ -34,5 +34,6 @@ export interface SolicitudVacacionesRepository{
     listarPorEstatus(filtro: FiltroPorEstatus): Promise<ResultadoPaginado<SolicitudVacaciones>>;
     marcarDiasRevocados(solicitudId: string, dias: Date[], tx?: unknown): Promise<void>;
     listarPorPeriodo(desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>;
+    contarDiasRevocadosPorJefe(empleadoId: string, jefeId: string): Promise<number>;
 
 }

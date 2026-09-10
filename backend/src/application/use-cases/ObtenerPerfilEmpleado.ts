@@ -37,6 +37,7 @@ export interface PerfilEmpleadoResultado {
     totalPendientes: number;
     totalDisfrutados: number;
     totalProgramados: number;
+    diasRevocadosPorJefeDirecto: number;
     vacacionesProgramadas: VacacionProgramadaResultado[];
     backupNombre: string | null;
 }
@@ -72,6 +73,10 @@ export class ObtenerPerfilEmpleado {
         const saldosVigentes = saldos.filter((s) => s.estaVigente(hoy));
 
         const equipoDirecto = await this.empleadoRepo.listarEquipoDirecto(empleado.id);
+
+        const diasRevocadosPorJefeDirecto = empleado.jefeDirectoId
+            ? await this.solicitudRepo.contarDiasRevocadosPorJefe(empleado.id, empleado.jefeDirectoId)
+            : 0;
 
         // Un dia de una solicitud aprobada solo cuenta como "disfrutado" (ocupado) una vez que
         // ya paso. Mientras la fecha sea futura se muestra aparte, como "programado", para no
@@ -141,6 +146,7 @@ export class ObtenerPerfilEmpleado {
             totalPendientes: saldosVigentes.reduce((acc, s) => acc + s.diasPendientes, 0),
             totalDisfrutados: saldos.reduce((acc, s) => acc + diasDisfrutadosMostrado(s), 0),
             totalProgramados: vacacionesProgramadas.reduce((acc, v) => acc + v.cantidadDias, 0),
+            diasRevocadosPorJefeDirecto,
             vacacionesProgramadas,
         };
     }
