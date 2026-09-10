@@ -5,7 +5,6 @@ import {
     RefreshCw,
     AlertCircle,
     ShieldCheck,
-    Building2,
     CalendarDays,
 } from 'lucide-react';
 
@@ -13,17 +12,9 @@ const GLASS = 'bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl';
 
 type FiltroSemaforo = 'todos' | EstadoSaldo;
 
-const ESTILOS_ESTADO: Record<EstadoSaldo, { texto: string; punto: string; etiqueta: string; borde: string }> = {
-    vencido: { texto: 'text-red-300', punto: 'bg-red-400', etiqueta: 'Vencido', borde: 'border-l-red-400' },
-    critico: { texto: 'text-amber-300', punto: 'bg-amber-400', etiqueta: 'Por vencer', borde: 'border-l-amber-400' },
-    vigente: { texto: 'text-emerald-300', punto: 'bg-emerald-400', etiqueta: 'Vigente', borde: 'border-l-emerald-400' },
-};
-
 interface EmpleadoConPeriodos {
     empleadoId: string;
     nombre: string;
-    puesto: string | null;
-    departamento: string | null;
     ordenFecha: string;
     periodos: EmpleadoEquipo['saldos'];
 }
@@ -61,15 +52,46 @@ function construirEmpleadosConPeriodos(equipo: EmpleadoEquipo[]): EmpleadoConPer
         .map((empleado) => ({
             empleadoId: empleado.empleadoId,
             nombre: empleado.nombre,
-            puesto: empleado.puesto,
-            departamento: empleado.departamento,
             ordenFecha: fechaMasCercana(empleado.saldos),
             periodos: [...empleado.saldos].sort((a, b) => a.fechaLimiteDisfrute.localeCompare(b.fechaLimiteDisfrute)),
         }))
         .sort((a, b) => a.ordenFecha.localeCompare(b.ordenFecha));
 }
 
-function TablaEquipo({ empleados, filtro }: { empleados: EmpleadoConPeriodos[]; filtro: FiltroSemaforo }) {
+interface FilaEquipo {
+    empleadoId: string;
+    nombre: string;
+    total: number;
+    tomados: number;
+    disponibles: number;
+    vencidos: number;
+    porVencer: number;
+    fechaVencimiento: string;
+}
+
+// Un empleado puede tener varios periodos de saldo (ej. contingentes de distintos años);
+// se consolidan en una sola fila sumando cada periodo. "Fecha vencimiento" siempre muestra
+// un dato: la fecha limite del periodo mas cercano a hoy (mismo criterio que ordenFecha),
+// sin importar si ese periodo esta vencido, por vencer o vigente.
+function construirFilaEquipo(empleado: EmpleadoConPeriodos): FilaEquipo {
+    const periodos = empleado.periodos;
+    const total = periodos.reduce((acc, p) => acc + p.diasPorLey, 0);
+    const tomados = periodos.reduce((acc, p) => acc + p.diasDisfrutados, 0);
+    const disponibles = periodos.reduce((acc, p) => acc + p.diasPendientes, 0);
+    const vencidos = periodos.filter((p) => p.estado === 'vencido').reduce((acc, p) => acc + p.diasPendientes, 0);
+    const porVencer = periodos.filter((p) => p.estado === 'critico').reduce((acc, p) => acc + p.diasPendientes, 0);
+
+    return {
+        empleadoId: empleado.empleadoId,
+        nombre: empleado.nombre,
+        total, tomados, disponibles, vencidos, porVencer,
+        fechaVencimiento: empleado.ordenFecha,
+    };
+}
+
+function TablaEquipo({ empleados }: { empleados: EmpleadoConPeriodos[] }) {
+    const filas = empleados.map(construirFilaEquipo);
+
     return (
         <div className={`${GLASS} rounded-2xl overflow-hidden`}>
             <div className="overflow-x-auto">
@@ -77,72 +99,41 @@ function TablaEquipo({ empleados, filtro }: { empleados: EmpleadoConPeriodos[]; 
                     <thead>
                         <tr className="bg-linear-to-r from-[#4a8b2c]/30 to-[#ee7624]/20 border-b border-white/20">
                             <th className="text-left px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Empleado</th>
-                            <th className="text-left px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Puesto</th>
-                            <th className="text-left px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Departamento</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Periodo</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Días por ley</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Disfrutados</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Pendientes</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha límite</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Estado</th>
+                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Total</th>
+                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Tomados</th>
+                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Disponibles</th>
+                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Vencidos</th>
+                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Por vencer</th>
+                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/10">
-                        {empleados.map((empleado, indiceEmpleado) => {
-                            const periodos = filtro === 'todos'
-                                ? empleado.periodos
-                                : empleado.periodos.filter((p) => p.estado === filtro);
-                            if (periodos.length === 0) return null;
-
-                            return periodos.map((saldo, indice) => {
-                                const estilo = ESTILOS_ESTADO[saldo.estado];
-                                return (
-                                    <tr
-                                        key={saldo.id}
-                                        className={`border-l-4 ${estilo.borde} ${indiceEmpleado % 2 === 1 ? 'bg-white/5' : ''}`}
-                                    >
-                                        {indice === 0 && (
-                                            <td className="px-4 py-3.5 align-top" rowSpan={periodos.length}>
-                                                <div className="flex items-center gap-2.5 min-w-[11rem]">
-                                                    <div className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center font-semibold text-[11px] bg-white/15 text-white">
-                                                        {iniciales(empleado.nombre)}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-white font-medium truncate">{empleado.nombre}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        )}
-                                        {indice === 0 && (
-                                            <td className="px-4 py-3.5 text-white/80 whitespace-nowrap align-top" rowSpan={periodos.length}>
-                                                {empleado.puesto || 'Sin puesto'}
-                                            </td>
-                                        )}
-                                        {indice === 0 && (
-                                            <td className="px-4 py-3.5 text-white/80 whitespace-nowrap align-top" rowSpan={periodos.length}>
-                                                <span className="flex items-center gap-1.5">
-                                                    <Building2 size={12} className="text-white/40 shrink-0" />
-                                                    {empleado.departamento || 'Sin departamento'}
-                                                </span>
-                                            </td>
-                                        )}
-                                        <td className="px-4 py-3.5 text-center text-white/70 whitespace-nowrap">
-                                            {saldo.inicioValidez.slice(0, 4)}-{saldo.finValidez.slice(0, 4)}
-                                        </td>
-                                        <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{saldo.diasPorLey}</td>
-                                        <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{saldo.diasDisfrutados}</td>
-                                        <td className={`px-4 py-3.5 text-center font-bold ${estilo.texto}`}>{saldo.diasPendientes}</td>
-                                        <td className="px-4 py-3.5 text-center text-white/70 whitespace-nowrap">{formatearFecha(saldo.fechaLimiteDisfrute)}</td>
-                                        <td className="px-4 py-3.5 text-center">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 ${estilo.texto}`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${estilo.punto}`} />
-                                                {estilo.etiqueta}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                );
-                            });
-                        })}
+                        {filas.map((fila, indice) => (
+                            <tr key={fila.empleadoId} className={indice % 2 === 1 ? 'bg-white/5' : ''}>
+                                <td className="px-4 py-3.5">
+                                    <div className="flex items-center gap-2.5 min-w-[11rem]">
+                                        <div className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center font-semibold text-[11px] bg-white/15 text-white">
+                                            {iniciales(fila.nombre)}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-white font-medium truncate">{fila.nombre}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{fila.total}</td>
+                                <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{fila.tomados}</td>
+                                <td className="px-4 py-3.5 text-center text-emerald-300 font-semibold">{fila.disponibles}</td>
+                                <td className={`px-4 py-3.5 text-center font-bold ${fila.vencidos > 0 ? 'text-red-300' : 'text-white/40'}`}>
+                                    {fila.vencidos}
+                                </td>
+                                <td className={`px-4 py-3.5 text-center font-bold ${fila.porVencer > 0 ? 'text-amber-300' : 'text-white/40'}`}>
+                                    {fila.porVencer}
+                                </td>
+                                <td className="px-4 py-3.5 text-center text-white/70 whitespace-nowrap">
+                                    {formatearFecha(fila.fechaVencimiento)}
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
@@ -237,7 +228,7 @@ export function JefeEquipoPage() {
                             <p className="text-white/60 text-sm">Sin registros con este filtro.</p>
                         </div>
                     ) : (
-                        <TablaEquipo empleados={empleadosFiltrados} filtro={filtro} />
+                        <TablaEquipo empleados={empleadosFiltrados} />
                     )}
                 </div>
             )}
