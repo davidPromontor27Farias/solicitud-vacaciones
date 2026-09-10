@@ -1,59 +1,18 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { registrarCorreo, crearPassword } from '../api/auth';
-import { ApiError } from '../api/client';
+
+import { Link, useSearchParams } from 'react-router-dom';
 import { PasswordInput } from '../components/PasswordInput';
+import { useActivarCuentaPage } from '../hooks/useActivarCuenta';
 
-export function ActivarCuentaPage() {
+
+
+export const  ActivarCuentaPage = () => {
+
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
     const numeroEmpleado = searchParams.get('numeroEmpleado') ?? '';
+    const {paso, manejarCorreo, manejarToken, mensaje, correo, setCorreo, password, setPassword, error, 
+        cargando, token, setToken, passwordConfirmacion, 
+        setPasswordConfirmacion} = useActivarCuentaPage(numeroEmpleado);
 
-    const [correo, setCorreo] = useState('');
-    const [token, setToken] = useState('');
-    const [password, setPassword] = useState('');
-    const [passwordConfirmacion, setPasswordConfirmacion] = useState('');
-    const [paso, setPaso] = useState<'correo' | 'token'>('correo');
-    const [error, setError] = useState<string | null>(null);
-    const [cargando, setCargando] = useState(false);
-    const [mensaje, setMensaje] = useState<string | null>(null);
-
-    async function manejarCorreo(evento: FormEvent) {
-        evento.preventDefault();
-        setError(null);
-        setCargando(true);
-        try {
-            await registrarCorreo(numeroEmpleado, correo.trim());
-            setMensaje('Te enviamos un correo con un código de activación. Si no te llega, pide el código a sistemas.');
-            setPaso('token');
-        } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Error inesperado');
-        } finally {
-            setCargando(false);
-        }
-    }
-
-    async function manejarToken(evento: FormEvent) {
-        evento.preventDefault();
-        setError(null);
-
-        if (password !== passwordConfirmacion) {
-            setError('Las contraseñas no coinciden');
-            return;
-        }
-
-        setCargando(true);
-        try {
-            await crearPassword(numeroEmpleado, token.trim(), password);
-            navigate('/login', {
-                state: { mensajeExito: 'Tu cuenta se creó correctamente. Inicia sesión con tu nueva contraseña.' },
-            });
-        } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Error inesperado');
-        } finally {
-            setCargando(false);
-        }
-    }
 
     if (!numeroEmpleado) {
         return (
