@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useLocation, Link, type Location } from 'react-router-dom';
+import { ShieldCheck } from 'lucide-react';
 import { verificarNumeroEmpleado } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../api/client';
@@ -69,15 +70,6 @@ export function LoginPage() {
 
             {/* Capa de sombra/overlay */}
             <div className="absolute inset-0 bg-black/50" />
-
-            {/* Accesos de administración */}
-            <div className="absolute top-4 right-4 z-20 text-right font-bold">
-                <Link
-                    to="/admin/login"
-                >
-                    Admin
-                </Link>
-            </div>
 
             {/* Contenido del formulario */}
             <div className="relative z-10 w-full max-w-sm bg-white/50 backdrop-blur-sm p-6 sm:p-8 rounded-lg shadow-lg border border-white/20">
@@ -150,6 +142,16 @@ export function LoginPage() {
                         </Link>
                     </form>
                 )}
+
+                <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+                    <Link
+                        to="/admin/login"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900"
+                    >
+                        <ShieldCheck className="w-4 h-4" />
+                        Acceso administrativo
+                    </Link>
+                </div>
             </div>
         </div>
     );
