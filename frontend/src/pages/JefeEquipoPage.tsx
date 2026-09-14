@@ -62,7 +62,7 @@ export function JefeEquipoPage() {
                             <p className="text-white/60 text-sm">Sin registros con este filtro.</p>
                         </div>
                     ) : (
-                        <TablaEquipo empleados={empleadosFiltrados} />
+                        <TablaEquipo empleados={empleadosFiltrados} filtro={filtro} />
                     )}
                 </div>
             )}

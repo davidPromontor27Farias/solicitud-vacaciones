@@ -1,8 +1,13 @@
 import { GLASS } from '../../utils/estilos';
-import { construirFilaEquipo, formatearFecha, iniciales, type EmpleadoConPeriodos } from './utils';
+import { construirFilaEquipo, formatearFecha, iniciales, type EmpleadoConPeriodos, type FiltroSemaforo } from './utils';
 
-export const TablaEquipo = ({ empleados }: { empleados: EmpleadoConPeriodos[] }) => {
+export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPeriodos[]; filtro: FiltroSemaforo }) => {
     const filas = empleados.map(construirFilaEquipo);
+
+    const mostrarDisponibles = filtro === 'todos' || filtro === 'vigente';
+    const mostrarVencidos = filtro === 'todos' || filtro === 'vencido';
+    const mostrarPorVencer = filtro === 'todos' || filtro === 'critico';
+    const mostrarBasicas = filtro === 'todos';
 
     return (
         <div className={`${GLASS} rounded-2xl overflow-hidden`}>
@@ -11,14 +16,30 @@ export const TablaEquipo = ({ empleados }: { empleados: EmpleadoConPeriodos[] })
                     <thead>
                         <tr className="bg-linear-to-r from-[#4a8b2c]/30 to-[#ee7624]/20 border-b border-white/20">
                             <th className="text-left px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Empleado</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Total</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Tomados</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Disponibles</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Vencidos</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Por vencer</th>
-                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
+                            {mostrarBasicas && (
+                                <>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Total</th>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Tomados</th>
+                                </>
+                            )}
+                            {mostrarDisponibles && (
+                                <>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Disponibles</th>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
+                                </>
+                            )}
+                            {mostrarVencidos && (
+                                <>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Vencidos</th>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
+                                </>
+                            )}
+                            {mostrarPorVencer && (
+                                <>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Por vencer</th>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
+                                </>
+                            )}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/10">
@@ -34,24 +55,40 @@ export const TablaEquipo = ({ empleados }: { empleados: EmpleadoConPeriodos[] })
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{fila.total}</td>
-                                <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{fila.tomados}</td>
-                                <td className="px-4 py-3.5 text-center text-emerald-300 font-semibold">{fila.disponibles}</td>
-                                <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaDisponibles ? 'text-emerald-200/80' : 'text-white/40'}`}>
-                                    {fila.fechaDisponibles ? formatearFecha(fila.fechaDisponibles) : '—'}
-                                </td>
-                                <td className={`px-4 py-3.5 text-center font-bold ${fila.vencidos > 0 ? 'text-red-300' : 'text-white/40'}`}>
-                                    {fila.vencidos}
-                                </td>
-                                <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaVencido ? 'text-red-300' : 'text-white/40'}`}>
-                                    {fila.fechaVencido ? formatearFecha(fila.fechaVencido) : '—'}
-                                </td>
-                                <td className={`px-4 py-3.5 text-center font-bold ${fila.porVencer > 0 ? 'text-amber-300' : 'text-white/40'}`}>
-                                    {fila.porVencer}
-                                </td>
-                                <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaPorVencer ? 'text-amber-300' : 'text-white/40'}`}>
-                                    {fila.fechaPorVencer ? formatearFecha(fila.fechaPorVencer) : '—'}
-                                </td>
+                                {mostrarBasicas && (
+                                    <>
+                                        <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{fila.total}</td>
+                                        <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{fila.tomados}</td>
+                                    </>
+                                )}
+                                {mostrarDisponibles && (
+                                    <>
+                                        <td className="px-4 py-3.5 text-center text-emerald-300 font-semibold">{fila.disponibles}</td>
+                                        <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaDisponibles ? 'text-emerald-200/80' : 'text-white/40'}`}>
+                                            {fila.fechaDisponibles ? formatearFecha(fila.fechaDisponibles) : '—'}
+                                        </td>
+                                    </>
+                                )}
+                                {mostrarVencidos && (
+                                    <>
+                                        <td className={`px-4 py-3.5 text-center font-bold ${fila.vencidos > 0 ? 'text-red-300' : 'text-white/40'}`}>
+                                            {fila.vencidos}
+                                        </td>
+                                        <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaVencido ? 'text-red-300' : 'text-white/40'}`}>
+                                            {fila.fechaVencido ? formatearFecha(fila.fechaVencido) : '—'}
+                                        </td>
+                                    </>
+                                )}
+                                {mostrarPorVencer && (
+                                    <>
+                                        <td className={`px-4 py-3.5 text-center font-bold ${fila.porVencer > 0 ? 'text-amber-300' : 'text-white/40'}`}>
+                                            {fila.porVencer}
+                                        </td>
+                                        <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaPorVencer ? 'text-amber-300' : 'text-white/40'}`}>
+                                            {fila.fechaPorVencer ? formatearFecha(fila.fechaPorVencer) : '—'}
+                                        </td>
+                                    </>
+                                )}
                             </tr>
                         ))}
                     </tbody>
