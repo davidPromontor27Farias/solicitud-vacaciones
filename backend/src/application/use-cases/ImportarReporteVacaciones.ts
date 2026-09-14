@@ -87,15 +87,33 @@ export class ImportarReporteVacaciones {
         let periodosCreados = 0;
         let periodosActualizados = 0;
         let periodosEliminados = 0;
-        for (const [numeroEmpleado, periodos] of porEmpleado) {
+        for (const [numeroEmpleado, periodosDelArchivo] of porEmpleado) {
             const empleado = await this.empleadoRepo.buscarPorNumeroEmpleado(numeroEmpleado);
             if (!empleado) continue;
 
-            const saldosExistentes = await this.saldoRepo.listarPorEmpleadoId(empleado.id);
             // Un periodo se identifica por inicioValidez + fechaLimiteDisfrute: SAP puede reportar
             // dos tramos con la misma vigencia pero contingentes que vencen en fechas distintas.
             const clavePeriodo = (inicioValidez: Date, fechaLimiteDisfrute: Date) =>
                 `${inicioValidez.getTime()}_${fechaLimiteDisfrute.getTime()}`;
+
+            // A veces SAP reporta el mismo periodo (misma vigencia y misma fecha limite) partido
+            // en mas de una fila para el mismo empleado, por ejemplo una ampliacion de contingente
+            // capturada aparte. Sin este paso, la ultima fila sobreescribia a la anterior en vez de
+            // sumarse, perdiendo dias disponibles reales. Se agrupan y suman antes de reconciliar.
+            const gruposPorClave = new Map<string, FilaValida[]>();
+            for (const p of periodosDelArchivo) {
+                const k = clavePeriodo(p.inicioValidez, p.fechaLimiteDisfrute);
+                const grupo = gruposPorClave.get(k) ?? [];
+                grupo.push(p);
+                gruposPorClave.set(k, grupo);
+            }
+            const periodos: FilaValida[] = [...gruposPorClave.values()].map((grupo) => ({
+                ...grupo[0],
+                diasPorLey: grupo.reduce((acc, p) => acc + p.diasPorLey, 0),
+                diasDisfrutadosSap: grupo.reduce((acc, p) => acc + p.diasDisfrutadosSap, 0),
+            }));
+
+            const saldosExistentes = await this.saldoRepo.listarPorEmpleadoId(empleado.id);
             const periodosEnArchivo = new Set(periodos.map((p) => clavePeriodo(p.inicioValidez, p.fechaLimiteDisfrute)));
 
             for (const periodo of periodos) {
