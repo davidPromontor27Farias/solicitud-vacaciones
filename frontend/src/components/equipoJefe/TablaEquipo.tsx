@@ -14,7 +14,9 @@ export const TablaEquipo = ({ empleados }: { empleados: EmpleadoConPeriodos[] })
                             <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Total</th>
                             <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Tomados</th>
                             <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Disponibles</th>
+                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
                             <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Vencidos</th>
+                            <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
                             <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Por vencer</th>
                             <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
                         </tr>
@@ -35,14 +37,20 @@ export const TablaEquipo = ({ empleados }: { empleados: EmpleadoConPeriodos[] })
                                 <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{fila.total}</td>
                                 <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{fila.tomados}</td>
                                 <td className="px-4 py-3.5 text-center text-emerald-300 font-semibold">{fila.disponibles}</td>
+                                <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaDisponibles ? 'text-emerald-200/80' : 'text-white/40'}`}>
+                                    {fila.fechaDisponibles ? formatearFecha(fila.fechaDisponibles) : '—'}
+                                </td>
                                 <td className={`px-4 py-3.5 text-center font-bold ${fila.vencidos > 0 ? 'text-red-300' : 'text-white/40'}`}>
                                     {fila.vencidos}
+                                </td>
+                                <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaVencido ? 'text-red-300' : 'text-white/40'}`}>
+                                    {fila.fechaVencido ? formatearFecha(fila.fechaVencido) : '—'}
                                 </td>
                                 <td className={`px-4 py-3.5 text-center font-bold ${fila.porVencer > 0 ? 'text-amber-300' : 'text-white/40'}`}>
                                     {fila.porVencer}
                                 </td>
-                                <td className="px-4 py-3.5 text-center text-white/70 whitespace-nowrap">
-                                    {formatearFecha(fila.fechaVencimiento)}
+                                <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaPorVencer ? 'text-amber-300' : 'text-white/40'}`}>
+                                    {fila.fechaPorVencer ? formatearFecha(fila.fechaPorVencer) : '—'}
                                 </td>
                             </tr>
                         ))}

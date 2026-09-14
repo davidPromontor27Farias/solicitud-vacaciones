@@ -54,27 +54,47 @@ export interface FilaEquipo {
     total: number;
     tomados: number;
     disponibles: number;
+    fechaDisponibles: string | null;
     vencidos: number;
+    fechaVencido: string | null;
     porVencer: number;
-    fechaVencimiento: string;
+    fechaPorVencer: string | null;
+}
+
+// La fecha mas urgente dentro de un grupo de periodos: la mas antigua si ya vencieron
+// (la que lleva mas tiempo vencida), o la mas proxima si todavia estan por vencer.
+function fechaMasUrgente(periodos: EmpleadoEquipo['saldos']): string | null {
+    if (periodos.length === 0) return null;
+    return periodos.reduce(
+        (masUrgente, p) => (p.fechaLimiteDisfrute < masUrgente ? p.fechaLimiteDisfrute : masUrgente),
+        periodos[0].fechaLimiteDisfrute,
+    );
 }
 
 // Un empleado puede tener varios periodos de saldo (ej. contingentes de distintos años);
-// se consolidan en una sola fila sumando cada periodo. "Fecha vencimiento" siempre muestra
-// un dato: la fecha limite del periodo mas cercano a hoy (mismo criterio que ordenFecha),
-// sin importar si ese periodo esta vencido, por vencer o vigente.
+// se consolidan en una sola fila sumando cada periodo. Cada columna de dias (disponibles,
+// vencidos, por vencer) trae junto su propia fecha de vencimiento — pero solo si esa
+// columna tiene dias (> 0); si no, no tiene caso mostrar una fecha y queda en "—".
 export function construirFilaEquipo(empleado: EmpleadoConPeriodos): FilaEquipo {
     const periodos = empleado.periodos;
     const total = periodos.reduce((acc, p) => acc + p.diasPorLey, 0);
     const tomados = periodos.reduce((acc, p) => acc + p.diasDisfrutados, 0);
+
+    const periodosConDisponibles = periodos.filter((p) => p.diasPendientes > 0);
     const disponibles = periodos.reduce((acc, p) => acc + p.diasPendientes, 0);
-    const vencidos = periodos.filter((p) => p.estado === 'vencido').reduce((acc, p) => acc + p.diasPendientes, 0);
-    const porVencer = periodos.filter((p) => p.estado === 'critico').reduce((acc, p) => acc + p.diasPendientes, 0);
+
+    const periodosVencidos = periodos.filter((p) => p.estado === 'vencido');
+    const periodosPorVencer = periodos.filter((p) => p.estado === 'critico');
+
+    const vencidos = periodosVencidos.reduce((acc, p) => acc + p.diasPendientes, 0);
+    const porVencer = periodosPorVencer.reduce((acc, p) => acc + p.diasPendientes, 0);
 
     return {
         empleadoId: empleado.empleadoId,
         nombre: empleado.nombre,
-        total, tomados, disponibles, vencidos, porVencer,
-        fechaVencimiento: empleado.ordenFecha,
+        total, tomados,
+        disponibles, fechaDisponibles: disponibles > 0 ? fechaMasUrgente(periodosConDisponibles) : null,
+        vencidos, fechaVencido: vencidos > 0 ? fechaMasUrgente(periodosVencidos) : null,
+        porVencer, fechaPorVencer: porVencer > 0 ? fechaMasUrgente(periodosPorVencer) : null,
     };
 }
