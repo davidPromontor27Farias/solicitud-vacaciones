@@ -54,6 +54,7 @@ export interface FilaEquipo {
     total: number;
     tomados: number;
     disponibles: number;
+    fechaDisponibles: string | null;
     vencidos: number;
     fechaVencido: string | null;
     porVencer: number;
@@ -72,14 +73,18 @@ function fechaMasUrgente(periodos: EmpleadoEquipo['saldos']): string | null {
 }
 
 // Un empleado puede tener varios periodos de saldo (ej. contingentes de distintos años);
-// se consolidan en una sola fila sumando cada periodo. "Disponibles" solo cuenta los
-// periodos vigentes (ni vencidos ni por vencer): esos dos ya tienen su propia columna.
-// Vencidos y por vencer traen junto su fecha limite — solo si esa columna tiene dias (> 0).
+// se consolidan en una sola fila sumando cada periodo. Cada columna de dias (disponibles,
+// por vencer, vencidos) es mutuamente excluyente con las otras dos (un periodo solo puede
+// estar en un estado a la vez) y trae junto su propia fecha limite — por eso nunca deberian
+// coincidir salvo casualidad real en los datos. La fecha solo se muestra si esa columna
+// tiene dias (> 0); si no, no tiene caso mostrar una fecha y queda en "—".
 export function construirFilaEquipo(empleado: EmpleadoConPeriodos): FilaEquipo {
     const periodos = empleado.periodos;
     const total = periodos.reduce((acc, p) => acc + p.diasPorLey, 0);
     const tomados = periodos.reduce((acc, p) => acc + p.diasDisfrutados, 0);
 
+    // "Disponibles" = periodos vigentes, es decir los que NO estan por vencer (fuera de la
+    // ventana critica de 6 meses) ni ya vencieron.
     const periodosVigentes = periodos.filter((p) => p.estado === 'vigente');
     const disponibles = periodosVigentes.reduce((acc, p) => acc + p.diasPendientes, 0);
 
@@ -94,9 +99,9 @@ export function construirFilaEquipo(empleado: EmpleadoConPeriodos): FilaEquipo {
         empleadoId: empleado.empleadoId,
         nombre: empleado.nombre,
         total, tomados,
-        disponibles,
-        vencidos, fechaVencido: vencidos > 0 ? fechaMasUrgente(periodosVencidos) : null,
+        disponibles, fechaDisponibles: disponibles > 0 ? fechaMasUrgente(periodosVigentes) : null,
         porVencer, fechaPorVencer: porVencer > 0 ? fechaMasUrgente(periodosPorVencer) : null,
+        vencidos, fechaVencido: vencidos > 0 ? fechaMasUrgente(periodosVencidos) : null,
         programados,
     };
 }

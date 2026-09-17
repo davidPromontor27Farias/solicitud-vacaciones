@@ -23,7 +23,10 @@ export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPerio
                                 </>
                             )}
                             {mostrarDisponibles && (
-                                <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Días disponibles</th>
+                                <>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Días disponibles</th>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Vence el</th>
+                                </>
                             )}
                             {mostrarPorVencer && (
                                 <>
@@ -60,7 +63,12 @@ export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPerio
                                     </>
                                 )}
                                 {mostrarDisponibles && (
-                                    <td className="px-4 py-3.5 text-center text-emerald-300 font-semibold">{fila.disponibles}</td>
+                                    <>
+                                        <td className="px-4 py-3.5 text-center text-emerald-300 font-semibold">{fila.disponibles}</td>
+                                        <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaDisponibles ? 'text-emerald-200/80' : 'text-white/40'}`}>
+                                            {fila.fechaDisponibles ? formatearFecha(fila.fechaDisponibles) : '—'}
+                                        </td>
+                                    </>
                                 )}
                                 {mostrarPorVencer && (
                                     <>
