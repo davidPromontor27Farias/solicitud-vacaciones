@@ -21,6 +21,7 @@ export interface SaldoEquipo {
     diasPorLey: number;
     diasDisfrutados: number;
     diasPendientes: number;
+    diasProgramados: number;
     inicioValidez: string;
     finValidez: string;
     fechaLimiteDisfrute: string;

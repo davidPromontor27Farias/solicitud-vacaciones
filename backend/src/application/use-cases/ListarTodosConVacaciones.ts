@@ -49,6 +49,7 @@ export class ListarTodosConVacaciones {
                         diasPorLey: saldo.diasPorLey,
                         diasDisfrutados: saldo.diasDisfrutados,
                         diasPendientes: saldo.diasPendientes,
+                        diasProgramados: 0,
                         inicioValidez: saldo.inicioValidez,
                         finValidez: saldo.finValidez,
                         fechaLimiteDisfrute: saldo.fechaLimiteDisfrute,

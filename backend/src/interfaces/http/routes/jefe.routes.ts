@@ -26,7 +26,7 @@ interface JefeDeps {
 
 export function registerJefeRoutes(app: FastifyInstance, deps: JefeDeps): void {
     const iniciarSesionJefe = new IniciarSesionJefe(deps.empleadoRepo);
-    const listarEquipoConVacaciones = new ListarEquipoConVacaciones(deps.empleadoRepo, deps.saldoRepo);
+    const listarEquipoConVacaciones = new ListarEquipoConVacaciones(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo);
     const listarTodosConVacaciones = new ListarTodosConVacaciones(deps.empleadoRepo, deps.saldoRepo);
     const obtenerArbolMatricial = new ObtenerArbolMatricial(deps.empleadoRepo, deps.saldoRepo);
     const obtenerVacacionesAprobadasEquipo = new ObtenerVacacionesAprobadasEquipo(deps.solicitudRepo, deps.empleadoRepo);

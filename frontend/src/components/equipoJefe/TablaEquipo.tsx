@@ -4,10 +4,10 @@ import { construirFilaEquipo, formatearFecha, iniciales, type EmpleadoConPeriodo
 export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPeriodos[]; filtro: FiltroSemaforo }) => {
     const filas = empleados.map(construirFilaEquipo);
 
-    const mostrarDisponibles = filtro === 'todos' || filtro === 'vigente';
-    const mostrarVencidos = filtro === 'todos' || filtro === 'vencido';
-    const mostrarPorVencer = filtro === 'todos' || filtro === 'critico';
     const mostrarBasicas = filtro === 'todos';
+    const mostrarDisponibles = filtro === 'todos' || filtro === 'vigente';
+    const mostrarPorVencer = filtro === 'todos' || filtro === 'critico';
+    const mostrarVencidos = filtro === 'todos' || filtro === 'vencido';
 
     return (
         <div className={`${GLASS} rounded-2xl overflow-hidden`}>
@@ -18,26 +18,24 @@ export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPerio
                             <th className="text-left px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Empleado</th>
                             {mostrarBasicas && (
                                 <>
-                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Total</th>
-                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Tomados</th>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Días generados</th>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Días disfrutados</th>
                                 </>
                             )}
                             {mostrarDisponibles && (
-                                <>
-                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Disponibles</th>
-                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
-                                </>
-                            )}
-                            {mostrarVencidos && (
-                                <>
-                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Vencidos</th>
-                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
-                                </>
+                                <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Días disponibles</th>
                             )}
                             {mostrarPorVencer && (
                                 <>
                                     <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Por vencer</th>
-                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha vencimiento</th>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Tomar antes del</th>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Días programados</th>
+                                </>
+                            )}
+                            {mostrarVencidos && (
+                                <>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Días vencidos</th>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Fecha de vencimiento</th>
                                 </>
                             )}
                         </tr>
@@ -62,10 +60,18 @@ export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPerio
                                     </>
                                 )}
                                 {mostrarDisponibles && (
+                                    <td className="px-4 py-3.5 text-center text-emerald-300 font-semibold">{fila.disponibles}</td>
+                                )}
+                                {mostrarPorVencer && (
                                     <>
-                                        <td className="px-4 py-3.5 text-center text-emerald-300 font-semibold">{fila.disponibles}</td>
-                                        <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaDisponibles ? 'text-emerald-200/80' : 'text-white/40'}`}>
-                                            {fila.fechaDisponibles ? formatearFecha(fila.fechaDisponibles) : '—'}
+                                        <td className={`px-4 py-3.5 text-center font-bold ${fila.porVencer > 0 ? 'text-amber-300' : 'text-white/40'}`}>
+                                            {fila.porVencer}
+                                        </td>
+                                        <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaPorVencer ? 'text-amber-300' : 'text-white/40'}`}>
+                                            {fila.fechaPorVencer ? formatearFecha(fila.fechaPorVencer) : '—'}
+                                        </td>
+                                        <td className={`px-4 py-3.5 text-center font-semibold ${fila.programados > 0 ? 'text-sky-300' : 'text-white/40'}`}>
+                                            {fila.programados}
                                         </td>
                                     </>
                                 )}
@@ -76,16 +82,6 @@ export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPerio
                                         </td>
                                         <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaVencido ? 'text-red-300' : 'text-white/40'}`}>
                                             {fila.fechaVencido ? formatearFecha(fila.fechaVencido) : '—'}
-                                        </td>
-                                    </>
-                                )}
-                                {mostrarPorVencer && (
-                                    <>
-                                        <td className={`px-4 py-3.5 text-center font-bold ${fila.porVencer > 0 ? 'text-amber-300' : 'text-white/40'}`}>
-                                            {fila.porVencer}
-                                        </td>
-                                        <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaPorVencer ? 'text-amber-300' : 'text-white/40'}`}>
-                                            {fila.fechaPorVencer ? formatearFecha(fila.fechaPorVencer) : '—'}
                                         </td>
                                     </>
                                 )}
