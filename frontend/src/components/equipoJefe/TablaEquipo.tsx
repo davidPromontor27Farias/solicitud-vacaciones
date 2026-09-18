@@ -72,8 +72,8 @@ export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPerio
                                         <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaPorVencer ? 'text-amber-300' : 'text-white/40'}`}>
                                             {fila.fechaPorVencer ? formatearFecha(fila.fechaPorVencer) : '—'}
                                         </td>
-                                        <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{fila.otrosDisponibles}</td>
-                                        <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaProximaLimite ? 'text-white/80' : 'text-white/40'}`}>
+                                        <td className="px-4 py-3.5 text-center text-emerald-300 font-semibold">{fila.otrosDisponibles}</td>
+                                        <td className={`px-4 py-3.5 text-center whitespace-nowrap ${fila.fechaProximaLimite ? 'text-emerald-200/80' : 'text-white/40'}`}>
                                             {fila.fechaProximaLimite ? formatearFecha(fila.fechaProximaLimite) : '—'}
                                         </td>
                                         <td className={`px-4 py-3.5 text-center font-semibold ${fila.programados > 0 ? 'text-sky-300' : 'text-white/40'}`}>
