@@ -54,6 +54,7 @@ export interface FilaEquipo {
     total: number;
     tomados: number;
     disponibles: number;
+    fechaDisponibles: string | null;
     vencidos: number;
     fechaVencido: string | null;
     porVencer: number;
@@ -98,7 +99,7 @@ export function construirFilaEquipo(empleado: EmpleadoConPeriodos): FilaEquipo {
         empleadoId: empleado.empleadoId,
         nombre: empleado.nombre,
         total, tomados,
-        disponibles,
+        disponibles, fechaDisponibles: disponibles > 0 ? fechaMasUrgente(periodosVigentes) : null,
         porVencer, fechaPorVencer: porVencer > 0 ? fechaMasUrgente(periodosPorVencer) : null,
         vencidos, fechaVencido: vencidos > 0 ? fechaMasUrgente(periodosVencidos) : null,
         programados,
