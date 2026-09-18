@@ -58,6 +58,8 @@ export interface FilaEquipo {
     fechaVencido: string | null;
     porVencer: number;
     fechaPorVencer: string | null;
+    otrosDisponibles: number;
+    fechaProximaLimite: string | null;
     programados: number;
 }
 
@@ -82,16 +84,18 @@ export function construirFilaEquipo(empleado: EmpleadoConPeriodos): FilaEquipo {
     const total = periodos.reduce((acc, p) => acc + p.diasPorLey, 0);
     const tomados = periodos.reduce((acc, p) => acc + p.diasDisfrutados, 0);
 
-    // "Disponibles" = periodos vigentes, es decir los que NO estan por vencer (fuera de la
-    // ventana critica de 6 meses) ni ya vencieron.
+    // "Disponibles" = todo lo que no esta vencido (vigente + por vencer). "Otros disponibles"
+    // es el restante una vez separados los que estan por vencer: la parte que todavia no
+    // entra en la ventana critica de 6 meses, con su propia fecha limite (Proxima fecha limite).
     const periodosVigentes = periodos.filter((p) => p.estado === 'vigente');
-    const disponibles = periodosVigentes.reduce((acc, p) => acc + p.diasPendientes, 0);
-
     const periodosVencidos = periodos.filter((p) => p.estado === 'vencido');
     const periodosPorVencer = periodos.filter((p) => p.estado === 'critico');
 
+    const disponibles = periodosVigentes.reduce((acc, p) => acc + p.diasPendientes, 0)
+        + periodosPorVencer.reduce((acc, p) => acc + p.diasPendientes, 0);
     const vencidos = periodosVencidos.reduce((acc, p) => acc + p.diasPendientes, 0);
     const porVencer = periodosPorVencer.reduce((acc, p) => acc + p.diasPendientes, 0);
+    const otrosDisponibles = disponibles - porVencer;
     const programados = periodosPorVencer.reduce((acc, p) => acc + p.diasProgramados, 0);
 
     return {
@@ -100,6 +104,7 @@ export function construirFilaEquipo(empleado: EmpleadoConPeriodos): FilaEquipo {
         total, tomados,
         disponibles,
         porVencer, fechaPorVencer: porVencer > 0 ? fechaMasUrgente(periodosPorVencer) : null,
+        otrosDisponibles, fechaProximaLimite: otrosDisponibles > 0 ? fechaMasUrgente(periodosVigentes) : null,
         vencidos, fechaVencido: vencidos > 0 ? fechaMasUrgente(periodosVencidos) : null,
         programados,
     };
