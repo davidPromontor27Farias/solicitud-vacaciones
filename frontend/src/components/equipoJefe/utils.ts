@@ -85,7 +85,8 @@ export function construirFilaEquipo(empleado: EmpleadoConPeriodos): FilaEquipo {
     const tomados = periodos.reduce((acc, p) => acc + p.diasDisfrutados, 0);
 
     // "Disponibles" = todo lo que no esta vencido (vigente + por vencer). "Otros disponibles"
-    // es dias generados menos dias disfrutados a nivel empleado, sin importar el estado del periodo.
+    // es el restante una vez separados los que estan por vencer: la parte que todavia no
+    // entra en la ventana critica de 6 meses, con su propia fecha limite (Proxima fecha limite).
     const periodosVigentes = periodos.filter((p) => p.estado === 'vigente');
     const periodosVencidos = periodos.filter((p) => p.estado === 'vencido');
     const periodosPorVencer = periodos.filter((p) => p.estado === 'critico');
@@ -94,7 +95,7 @@ export function construirFilaEquipo(empleado: EmpleadoConPeriodos): FilaEquipo {
         + periodosPorVencer.reduce((acc, p) => acc + p.diasPendientes, 0);
     const vencidos = periodosVencidos.reduce((acc, p) => acc + p.diasPendientes, 0);
     const porVencer = periodosPorVencer.reduce((acc, p) => acc + p.diasPendientes, 0);
-    const otrosDisponibles = total - tomados;
+    const otrosDisponibles = disponibles - porVencer;
     const programados = periodosPorVencer.reduce((acc, p) => acc + p.diasProgramados, 0);
 
     return {
