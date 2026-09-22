@@ -1,8 +1,8 @@
 import { EmpleadoRepository } from "../../domain/repositories/EmpleadoRepository";
 import { SaldoVacacionesRepository } from "../../domain/repositories/SaldoVacacionesRepository";
 import { SolicitudVacacionesRepository } from "../../domain/repositories/SolicitudVacacionesRepository";
-import { SaldoVacaciones } from "../../domain/entities/SaldoVacaciones";
 import { NotFoundError } from "../../shared/errors";
+import { calcularConsumoSaldo, calcularDiasPasadosYFuturos } from "../../domain/services/consumoSaldo";
 
 export interface PeriodoSaldoResultado {
     diasPorLey: number;
@@ -70,7 +70,6 @@ export class ObtenerPerfilEmpleado {
 
         const hoy = new Date();
         const hoyUtc = inicioDelDiaUtc(hoy);
-        const saldosVigentes = saldos.filter((s) => s.estaVigente(hoy));
 
         const equipoDirecto = await this.empleadoRepo.listarEquipoDirecto(empleado.id);
 
@@ -78,19 +77,17 @@ export class ObtenerPerfilEmpleado {
             ? await this.solicitudRepo.contarDiasRevocadosPorJefe(empleado.id, empleado.jefeDirectoId)
             : 0;
 
-        // Un dia de una solicitud aprobada solo cuenta como "disfrutado" (ocupado) una vez que
-        // ya paso. Mientras la fecha sea futura se muestra aparte, como "programado", para no
-        // inflar el consumo real antes de que la vacacion realmente ocurra.
+        // Un dia de una solicitud aprobada solo cuenta como "disfrutado" (ocupado) y se
+        // descuenta de los disponibles una vez que ya paso. Mientras la fecha sea futura se
+        // muestra aparte, como "programado", sin restar del saldo.
         const aprobadas = await this.solicitudRepo.listarAprobadasPorEmpleado(empleado.id);
+        const { pasados: diasPasadosPorSaldoId, futuros: diasFuturosPorSaldoId } = calcularDiasPasadosYFuturos(saldos, aprobadas, hoy);
 
-        const diasPasadosPorSaldoId = new Map<string, number>();
-        const diasFuturosPorSaldoId = new Map<string, number>();
         const vacacionesProgramadas: VacacionProgramadaResultado[] = [];
         for (const solicitud of aprobadas) {
             // Un dia revocado ya no cuenta ni como disfrutado ni como programado: los dias
             // que se le hayan revocado a esta solicitud se excluyen aqui por completo.
-            const diasActivos = solicitud.diasActivos;
-            const diasFuturos = diasActivos.filter((dia) => dia >= hoyUtc);
+            const diasFuturos = solicitud.diasActivos.filter((dia) => dia >= hoyUtc);
             if (diasFuturos.length > 0) {
                 vacacionesProgramadas.push({
                     solicitudId: solicitud.id,
@@ -98,27 +95,13 @@ export class ObtenerPerfilEmpleado {
                     cantidadDias: diasFuturos.length,
                 });
             }
-
-            for (const dia of diasActivos) {
-                const saldoDelDia = saldos.find((s) => s.estaVigente(dia));
-                if (!saldoDelDia) continue;
-                const mapa = dia >= hoyUtc ? diasFuturosPorSaldoId : diasPasadosPorSaldoId;
-                mapa.set(saldoDelDia.id, (mapa.get(saldoDelDia.id) ?? 0) + 1);
-            }
         }
         vacacionesProgramadas.sort((a, b) => a.dias[0].getTime() - b.dias[0].getTime());
 
-        // Ante desfase con SAP (nomina aun no procesa la liquidacion de dias ya tomados), se
-        // toma el mayor entre lo que SAP ya confirmo y lo que localmente ya transcurrio, para
-        // no retroceder el contador ni duplicar el conteo cuando SAP alcance al sistema.
-        const diasDisfrutadosMostrado = (saldo: SaldoVacaciones): number =>
-            Math.max(saldo.diasDisfrutados, diasPasadosPorSaldoId.get(saldo.id) ?? 0);
-
-        // Dias de este periodo con solicitud aprobada cuya fecha todavia no llega. En cuanto
-        // la fecha pasa, este numero baja (deja de contarse aqui) y diasDisfrutadosMostrado
-        // sube por esa misma cantidad, sin doble conteo entre ambas columnas.
-        const diasAprobadosMostrado = (saldo: SaldoVacaciones): number =>
-            diasFuturosPorSaldoId.get(saldo.id) ?? 0;
+        const consumoPorSaldoId = new Map(saldos.map((s) => [
+            s.id,
+            calcularConsumoSaldo(s, diasPasadosPorSaldoId.get(s.id) ?? 0, diasFuturosPorSaldoId.get(s.id) ?? 0),
+        ]));
 
         return {
             nombre: empleado.nombre,
@@ -130,21 +113,26 @@ export class ObtenerPerfilEmpleado {
             jefeDirecto,
             backupNombre: empleado.backupNombre,
             esJefe: equipoDirecto.length > 0,
-            saldos: saldosOrdenados.map((s) => ({
-                diasPorLey: s.diasPorLey,
-                diasDisfrutados: diasDisfrutadosMostrado(s),
-                diasAprobados: diasAprobadosMostrado(s),
-                diasPendientes: s.diasPendientes,
-                inicioValidez: s.inicioValidez,
-                finValidez: s.finValidez,
-                fechaVencimiento: s.fechaVencimiento,
-                fechaLimiteDisfrute: s.fechaLimiteDisfrute,
-                anioInicio: s.inicioValidez.getFullYear(),
-                anioFin: s.finValidez.getFullYear(),
-                estado: s.estaVencido(hoy) ? 'vencido' : s.estaVigente(hoy) ? 'disponible' : 'proximo',
-            })),
-            totalPendientes: saldosVigentes.reduce((acc, s) => acc + s.diasPendientes, 0),
-            totalDisfrutados: saldos.reduce((acc, s) => acc + diasDisfrutadosMostrado(s), 0),
+            saldos: saldosOrdenados.map((s) => {
+                const consumo = consumoPorSaldoId.get(s.id)!;
+                return {
+                    diasPorLey: s.diasPorLey,
+                    diasDisfrutados: consumo.diasDisfrutados,
+                    diasAprobados: consumo.diasProgramados,
+                    diasPendientes: consumo.diasPendientes,
+                    inicioValidez: s.inicioValidez,
+                    finValidez: s.finValidez,
+                    fechaVencimiento: s.fechaVencimiento,
+                    fechaLimiteDisfrute: s.fechaLimiteDisfrute,
+                    anioInicio: s.inicioValidez.getFullYear(),
+                    anioFin: s.finValidez.getFullYear(),
+                    estado: s.estaVencido(hoy) ? 'vencido' : s.estaVigente(hoy) ? 'disponible' : 'proximo',
+                };
+            }),
+            totalPendientes: saldos
+                .filter((s) => s.estaVigente(hoy))
+                .reduce((acc, s) => acc + consumoPorSaldoId.get(s.id)!.diasPendientes, 0),
+            totalDisfrutados: saldos.reduce((acc, s) => acc + consumoPorSaldoId.get(s.id)!.diasDisfrutados, 0),
             totalProgramados: vacacionesProgramadas.reduce((acc, v) => acc + v.cantidadDias, 0),
             diasRevocadosPorJefeDirecto,
             vacacionesProgramadas,

@@ -1,6 +1,8 @@
 import { Empleado } from "../../domain/entities/Empleado";
 import { EmpleadoRepository } from "../../domain/repositories/EmpleadoRepository";
 import { SaldoVacacionesRepository } from "../../domain/repositories/SaldoVacacionesRepository";
+import { SolicitudVacacionesRepository } from "../../domain/repositories/SolicitudVacacionesRepository";
+import { calcularConsumoSaldo, calcularDiasPasadosYFuturos } from "../../domain/services/consumoSaldo";
 
 export type EstadoNodo = 'vencido' | 'critico' | 'vigente' | 'sin_datos';
 
@@ -43,12 +45,14 @@ export class ObtenerArbolMatricial {
     constructor(
         private empleadoRepo: EmpleadoRepository,
         private saldoRepo: SaldoVacacionesRepository,
+        private solicitudRepo: SolicitudVacacionesRepository,
     ) {}
 
     async ejecutar(jefeId: string, fechaReferencia: Date = new Date()): Promise<NodoArbolMatricial | null> {
-        const [todos, saldos] = await Promise.all([
+        const [todos, saldos, aprobadas] = await Promise.all([
             this.empleadoRepo.listarTodos(),
             this.saldoRepo.listarTodos(),
+            this.solicitudRepo.listarAprobadasTodas(),
         ]);
 
         const jefe = todos.find((e) => e.id === jefeId);
@@ -63,8 +67,18 @@ export class ObtenerArbolMatricial {
             saldosPorEmpleadoId.set(saldo.empleadoId, lista);
         }
 
+        const aprobadasPorEmpleadoId = new Map<string, typeof aprobadas>();
+        for (const solicitud of aprobadas) {
+            const lista = aprobadasPorEmpleadoId.get(solicitud.empleadoId) ?? [];
+            lista.push(solicitud);
+            aprobadasPorEmpleadoId.set(solicitud.empleadoId, lista);
+        }
+
         const resumenDe = (empleado: Empleado) => {
             const saldosDelEmpleado = saldosPorEmpleadoId.get(empleado.id) ?? [];
+            const aprobadasDelEmpleado = aprobadasPorEmpleadoId.get(empleado.id) ?? [];
+            const { pasados, futuros } = calcularDiasPasadosYFuturos(saldosDelEmpleado, aprobadasDelEmpleado, fechaReferencia);
+
             let estado: EstadoNodo = 'sin_datos';
             let diasPendientes = 0;
             let fechaLimiteDisfrute: Date | null = null;
@@ -77,7 +91,7 @@ export class ObtenerArbolMatricial {
                         : 'vigente';
                 if (estado === 'sin_datos' || ORDEN_URGENCIA.indexOf(estadoSaldo) < ORDEN_URGENCIA.indexOf(estado)) {
                     estado = estadoSaldo;
-                    diasPendientes = saldo.diasPendientes;
+                    diasPendientes = calcularConsumoSaldo(saldo, pasados.get(saldo.id) ?? 0, futuros.get(saldo.id) ?? 0).diasPendientes;
                     fechaLimiteDisfrute = saldo.fechaLimiteDisfrute;
                 }
             }

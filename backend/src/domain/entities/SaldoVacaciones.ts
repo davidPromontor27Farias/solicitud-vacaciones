@@ -53,24 +53,6 @@ export class SaldoVacaciones {
         return fecha >= this.props.finValidez && fecha <= this.props.fechaLimiteDisfrute;
     }
 
-    tieneDiasSuficientes(cantidadDias: number): boolean{
-        return this.props.diasPendientes >= cantidadDias;
-    }
-
-    // Reserva dias del cupo disponible al aprobarse una solicitud. No toca diasDisfrutados:
-    // ese campo solo debe reflejar dias ya tomados (fecha ya transcurrida), y eso se calcula
-    // en ObtenerPerfilEmpleado a partir de las solicitudes aprobadas, no aqui.
-    descontarDias(cantidadDias: number): void {
-        if(!this.tieneDiasSuficientes(cantidadDias)){
-            throw new Error('Días pendientes insuficientes')
-        }
-        this.props.diasPendientes -= cantidadDias;
-    }
-
-    restituirDias(cantidadDias: number): void{
-        this.props.diasPendientes += cantidadDias;
-    }
-
     reconciliarDesdeSap(datos: {
         diasPorLey: number;
         diasDisfrutadosSap: number;

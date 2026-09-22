@@ -8,6 +8,7 @@ import { EmailNotifier } from "../ports/EmailNotifier";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../shared/errors";
 import { dividirNombres } from "../../shared/texto";
 import {TransactionManager} from "../ports/TransactionManager";
+import { calcularConsumoSaldo, calcularDiasPasadosYFuturos } from "../../domain/services/consumoSaldo";
 
 export interface AprobarSolicitudInput {
     solicitudId: string;
@@ -60,34 +61,31 @@ export class AprobarSolicitud {
             throw new ValidationError(`El empleado ya no cuenta con saldo vigente para el ${diaSinSaldoVigente.toISOString().slice(0, 10)}`);
         }
 
-        const vigentes = saldos
-            .filter((s) => dias.some((dia) => s.estaVigente(dia)))
-            .sort((a, b) => a.fechaVencimiento.getTime() - b.fechaVencimiento.getTime());
+        const vigentes = saldos.filter((s) => dias.some((dia) => s.estaVigente(dia)));
 
-        const totalDisponible = vigentes.reduce((acc, s) => acc + s.diasPendientes, 0);
+        // El descuento real no se aplica aqui: los dias aprobados se quedan en "programados"
+        // y solo se convierten en dias disfrutados (restando de los disponibles) cuando su
+        // fecha ya paso. Por eso la validacion usa el saldo efectivo (ya descontando lo que
+        // otras solicitudes aprobadas de este empleado ya tienen reservado), no el saldo bruto.
+        const aprobadasExistentes = await this.solicitudRepo.listarAprobadasPorEmpleado(empleado.id);
+        const { pasados, futuros } = calcularDiasPasadosYFuturos(saldos, aprobadasExistentes);
+
+        const totalDisponible = vigentes.reduce((acc, s) => {
+            const consumo = calcularConsumoSaldo(s, pasados.get(s.id) ?? 0, futuros.get(s.id) ?? 0);
+            return acc + consumo.diasPendientesEfectivo;
+        }, 0);
         if (totalDisponible < solicitud.cantidadDias) {
             throw new ValidationError('El empleado ya no cuenta con suficientes días disponibles');
         }
 
         await this.txtManager.ejecutar(async (tx) => {
-            let restante = solicitud.cantidadDias;
-            for(const saldo of vigentes){
-                if(restante === 0) break;
-                const aDescontar = Math.min(saldo.diasPendientes, restante);
-                if(aDescontar > 0){
-                    saldo.descontarDias(aDescontar);
-                    await this.saldoRepo.guardar(saldo, tx);
-                    restante -= aDescontar;
-                }
-            }
-
             try {
                 solicitud.aprobar();
 
             } catch(error){
                 throw new ValidationError(error instanceof Error ? error.message : 'No se pudo aporbar la solicitud');
             }
-            
+
             await this.solicitudRepo.actualizar(solicitud, tx);
         })
 

@@ -1,6 +1,7 @@
 import { EmpleadoRepository } from "../../domain/repositories/EmpleadoRepository";
 import { SaldoVacacionesRepository } from "../../domain/repositories/SaldoVacacionesRepository";
 import { SolicitudVacacionesRepository } from "../../domain/repositories/SolicitudVacacionesRepository";
+import { calcularConsumoSaldo, calcularDiasPasadosYFuturos } from "../../domain/services/consumoSaldo";
 
 export interface SaldoEquipoResultado {
     id: string;
@@ -13,10 +14,6 @@ export interface SaldoEquipoResultado {
     fechaLimiteDisfrute: Date;
     diasParaVencer: number;
     estado: 'vencido' | 'critico' | 'vigente';
-}
-
-function inicioDelDiaUtc(fecha: Date): Date {
-    return new Date(Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth(), fecha.getUTCDate()));
 }
 
 export interface EmpleadoEquipoResultado {
@@ -37,7 +34,6 @@ export class ListarEquipoConVacaciones {
 
     async ejecutar(jefeId: string, fechaReferencia: Date = new Date()): Promise<EmpleadoEquipoResultado[]> {
         const equipo = await this.empleadoRepo.listarEquipoDirecto(jefeId);
-        const hoyUtc = inicioDelDiaUtc(fechaReferencia);
 
         const resultado: EmpleadoEquipoResultado[] = [];
         for (const empleado of equipo) {
@@ -46,19 +42,11 @@ export class ListarEquipoConVacaciones {
                 (a, b) => a.fechaLimiteDisfrute.getTime() - b.fechaLimiteDisfrute.getTime(),
             );
 
-            // Dias de vacaciones ya aprobadas cuya fecha todavia no llega, agrupados por el
-            // periodo (saldo) al que pertenecen — para poder mostrar cuanto de lo "por vencer"
-            // ya esta programado y cuanto sigue sin planearse.
+            // Un dia aprobado solo se descuenta del saldo (pasa a "disfrutado") una vez que ya
+            // ocurrio; mientras sea futuro se muestra en "programado" sin afectar los dias
+            // disponibles.
             const aprobadas = await this.solicitudRepo.listarAprobadasPorEmpleado(empleado.id);
-            const diasProgramadosPorSaldoId = new Map<string, number>();
-            for (const solicitud of aprobadas) {
-                for (const dia of solicitud.diasActivos) {
-                    if (dia < hoyUtc) continue;
-                    const saldoDelDia = saldos.find((s) => s.estaVigente(dia));
-                    if (!saldoDelDia) continue;
-                    diasProgramadosPorSaldoId.set(saldoDelDia.id, (diasProgramadosPorSaldoId.get(saldoDelDia.id) ?? 0) + 1);
-                }
-            }
+            const { pasados, futuros } = calcularDiasPasadosYFuturos(saldos, aprobadas, fechaReferencia);
 
             resultado.push({
                 empleadoId: empleado.id,
@@ -72,12 +60,13 @@ export class ListarEquipoConVacaciones {
                         : saldo.estaCritico(fechaReferencia)
                             ? 'critico'
                             : 'vigente';
+                    const consumo = calcularConsumoSaldo(saldo, pasados.get(saldo.id) ?? 0, futuros.get(saldo.id) ?? 0);
                     return {
                         id: saldo.id,
                         diasPorLey: saldo.diasPorLey,
-                        diasDisfrutados: saldo.diasDisfrutados,
-                        diasPendientes: saldo.diasPendientes,
-                        diasProgramados: diasProgramadosPorSaldoId.get(saldo.id) ?? 0,
+                        diasDisfrutados: consumo.diasDisfrutados,
+                        diasPendientes: consumo.diasPendientes,
+                        diasProgramados: consumo.diasProgramados,
                         inicioValidez: saldo.inicioValidez,
                         finValidez: saldo.finValidez,
                         fechaLimiteDisfrute: saldo.fechaLimiteDisfrute,

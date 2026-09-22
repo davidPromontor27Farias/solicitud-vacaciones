@@ -105,6 +105,14 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
         return rows.map(toDomain);
     }
 
+    async listarAprobadasTodas(): Promise<SolicitudVacaciones[]> {
+        const rows = await this.prisma.solicitudVacaciones.findMany({
+            where: { estatus: 'aprobada' },
+            include: { diasSolicitados: { orderBy: { fecha: 'asc' } } },
+        });
+        return rows.map(toDomain);
+    }
+
     async listarPendientesPorJefeDirecto(jefeDirectoId: string): Promise<SolicitudVacaciones[]> {
         const rows = await this.prisma.solicitudVacaciones.findMany({
             where: { empleado: { jefeDirectoId }, estatus: 'pendiente' },

@@ -38,7 +38,7 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
 
     const aprobarSolicitud = new AprobarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.enlaceGenerator, deps.txManager)
     const rechazarSolicitud = new RechazarSolicitud(deps.empleadoRepo, deps.solicitudRepo, deps.emailNotifier);
-    const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.txManager);
+    const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.solicitudRepo, deps.emailNotifier, deps.txManager);
     const obtenerHistorialEmpleado = new ObtenerHistorialEmpleado(deps.solicitudRepo);
     const obtenerHistorialEquipo = new ObtenerHistorialEquipo(deps.solicitudRepo);
 

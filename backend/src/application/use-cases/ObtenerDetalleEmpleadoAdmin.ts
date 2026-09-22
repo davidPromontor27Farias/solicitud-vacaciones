@@ -1,6 +1,8 @@
 import { EmpleadoRepository } from "../../domain/repositories/EmpleadoRepository";
 import { SaldoVacacionesRepository } from "../../domain/repositories/SaldoVacacionesRepository";
+import { SolicitudVacacionesRepository } from "../../domain/repositories/SolicitudVacacionesRepository";
 import { NotFoundError } from "../../shared/errors";
+import { calcularConsumoSaldo, calcularDiasPasadosYFuturos } from "../../domain/services/consumoSaldo";
 
 export interface SaldoDetalleResultado {
     id: string;
@@ -30,6 +32,7 @@ export class ObtenerDetalleEmpleadoAdmin {
     constructor(
         private empleadoRepo: EmpleadoRepository,
         private saldoRepo: SaldoVacacionesRepository,
+        private solicitudRepo: SolicitudVacacionesRepository,
     ) {}
 
     async ejecutar(input: { empleadoId: string }, fechaReferencia: Date = new Date()): Promise<DetalleEmpleadoAdminResultado> {
@@ -38,13 +41,15 @@ export class ObtenerDetalleEmpleadoAdmin {
             throw new NotFoundError('Empleado no encontrado');
         }
 
-        const [jefeDirecto, jefeMatricial, saldos] = await Promise.all([
+        const [jefeDirecto, jefeMatricial, saldos, aprobadas] = await Promise.all([
             empleado.jefeDirectoId ? this.empleadoRepo.buscarPorId(empleado.jefeDirectoId) : Promise.resolve(null),
             empleado.jefeMatricialId ? this.empleadoRepo.buscarPorId(empleado.jefeMatricialId) : Promise.resolve(null),
             this.saldoRepo.listarPorEmpleadoId(empleado.id),
+            this.solicitudRepo.listarAprobadasPorEmpleado(empleado.id),
         ]);
 
         const saldosOrdenados = [...saldos].sort((a, b) => a.fechaLimiteDisfrute.getTime() - b.fechaLimiteDisfrute.getTime());
+        const { pasados, futuros } = calcularDiasPasadosYFuturos(saldos, aprobadas, fechaReferencia);
 
         return {
             id: empleado.id,
@@ -63,11 +68,12 @@ export class ObtenerDetalleEmpleadoAdmin {
                     : saldo.estaCritico(fechaReferencia)
                         ? 'critico'
                         : 'vigente';
+                const consumo = calcularConsumoSaldo(saldo, pasados.get(saldo.id) ?? 0, futuros.get(saldo.id) ?? 0);
                 return {
                     id: saldo.id,
                     diasPorLey: saldo.diasPorLey,
-                    diasDisfrutados: saldo.diasDisfrutados,
-                    diasPendientes: saldo.diasPendientes,
+                    diasDisfrutados: consumo.diasDisfrutados,
+                    diasPendientes: consumo.diasPendientes,
                     inicioValidez: saldo.inicioValidez,
                     // fechaLimiteDisfrute (no fechaVencimiento) para que la fecha mostrada
                     // coincida con la que usa estaVencido()/diasPorVencer() al clasificar el estado.

@@ -8,6 +8,7 @@ import { EmailNotifier } from "../ports/EmailNotifier";
 import { IdGenerator } from "../ports/IdGenerator";
 import { EnlaceRevisionGenerator } from "../ports/EnlaceRevisionGenerator";
 import { NotFoundError, ValidationError } from "../../shared/errors";
+import { calcularConsumoSaldo, calcularDiasPasadosYFuturos } from "../../domain/services/consumoSaldo";
 
 export interface CrearSolicitudVacacionesInput {
     empleadoId: string;
@@ -54,7 +55,16 @@ export class CrearSolicitudVacaciones {
         }
 
         const saldosAplicables = saldos.filter((s) => rango.valores.some((dia) => s.estaVigente(dia)));
-        const totalDisponible = saldosAplicables.reduce((acc, s) => acc + s.diasPendientes, 0);
+
+        // Al igual que al aprobar, la disponibilidad se valida contra el saldo efectivo: lo
+        // que ya esta reservado por otras solicitudes aprobadas (pasadas o programadas) no
+        // se puede volver a solicitar, aunque el saldo bruto todavia no lo refleje.
+        const aprobadas = await this.solicitudRepo.listarAprobadasPorEmpleado(empleado.id);
+        const { pasados, futuros } = calcularDiasPasadosYFuturos(saldos, aprobadas);
+        const totalDisponible = saldosAplicables.reduce((acc, s) => {
+            const consumo = calcularConsumoSaldo(s, pasados.get(s.id) ?? 0, futuros.get(s.id) ?? 0);
+            return acc + consumo.diasPendientesEfectivo;
+        }, 0);
 
         if (totalDisponible < rango.cantidad) {
             throw new ValidationError('No cuentas con suficientes días disponibles para esta solicitud');

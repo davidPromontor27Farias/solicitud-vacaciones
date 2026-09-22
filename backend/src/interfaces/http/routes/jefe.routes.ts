@@ -27,11 +27,11 @@ interface JefeDeps {
 export function registerJefeRoutes(app: FastifyInstance, deps: JefeDeps): void {
     const iniciarSesionJefe = new IniciarSesionJefe(deps.empleadoRepo);
     const listarEquipoConVacaciones = new ListarEquipoConVacaciones(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo);
-    const listarTodosConVacaciones = new ListarTodosConVacaciones(deps.empleadoRepo, deps.saldoRepo);
-    const obtenerArbolMatricial = new ObtenerArbolMatricial(deps.empleadoRepo, deps.saldoRepo);
+    const listarTodosConVacaciones = new ListarTodosConVacaciones(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo);
+    const obtenerArbolMatricial = new ObtenerArbolMatricial(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo);
     const obtenerVacacionesAprobadasEquipo = new ObtenerVacacionesAprobadasEquipo(deps.solicitudRepo, deps.empleadoRepo);
     const obtenerNotificacionesJefe = new ObtenerNotificacionesJefe(deps.solicitudRepo, deps.empleadoRepo, deps.enlaceGenerator);
-    const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.txManager);
+    const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.solicitudRepo, deps.emailNotifier, deps.txManager);
 
     app.post('/jefe/login', {
         config: { rateLimit: { max: 10, timeWindow: '1 minute' } },

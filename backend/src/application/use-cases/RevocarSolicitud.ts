@@ -1,6 +1,5 @@
 import { Empleado } from "../../domain/entities/Empleado";
 import { EmpleadoRepository } from "../../domain/repositories/EmpleadoRepository";
-import { SaldoVacacionesRepository } from "../../domain/repositories/SaldoVacacionesRepository";
 import { SolicitudVacacionesRepository } from "../../domain/repositories/SolicitudVacacionesRepository";
 import { SolicitudVacaciones } from "../../domain/entities/SolicitudVacaciones";
 import { EmailNotifier } from "../ports/EmailNotifier";
@@ -34,7 +33,6 @@ export interface RevocarSolicitudInput {
 export class RevocarSolicitud {
     constructor(
         private empleadoRepo: EmpleadoRepository,
-        private saldoRepo: SaldoVacacionesRepository,
         private solicitudRepo: SolicitudVacacionesRepository,
         private emailNotifier: EmailNotifier,
         private txtManager: TransactionManager
@@ -70,41 +68,17 @@ export class RevocarSolicitud {
             throw new ValidationError(error instanceof Error ? error.message : 'No se pudo revocar la solicitud');
         }
 
+        // No hace falta restituir saldo: los dias futuros de una solicitud aprobada nunca se
+        // descontaron (solo se descuentan al pasar la fecha), asi que revocarlos mientras
+        // siguen en el futuro solo implica quitarlos de "programados".
         await this.txtManager.ejecutar(async (tx) =>{
             await this.solicitudRepo.actualizar(solicitud, tx);
             await this.solicitudRepo.marcarDiasRevocados(solicitud.id, diasARevocar, tx);
-            await this.restituirSaldo(empleado, diasARevocar, tx);
         })
-        
+
         await this.notificar(empleado, solicitud, input.revocadoPorId, diasARevocar);
 
         return solicitud;
-    }
-
-    private async restituirSaldo(empleado: Empleado, diasARevocar: Date[], tx?: unknown): Promise<void> {
-        const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id);
-        if (saldos.length === 0) {
-            throw new ValidationError('El empleado no tiene periodos de saldo registrados');
-        }
-
-        // Cada dia revocado se devuelve al periodo (saldo) al que realmente pertenece, no
-        // todos de golpe al primero: una solicitud puede cruzar dos periodos si se pidio
-        // cerca de una renovacion.
-        const cantidadPorSaldoId = new Map<string, number>();
-        for (const dia of diasARevocar) {
-            const vigentes = saldos
-                .filter((s) => s.estaVigente(dia))
-                .sort((a, b) => a.fechaVencimiento.getTime() - b.fechaVencimiento.getTime());
-            const destino = vigentes[0]
-                ?? [...saldos].sort((a, b) => b.inicioValidez.getTime() - a.inicioValidez.getTime())[0];
-            cantidadPorSaldoId.set(destino.id, (cantidadPorSaldoId.get(destino.id) ?? 0) + 1);
-        }
-
-        for (const [saldoId, cantidad] of cantidadPorSaldoId) {
-            const saldo = saldos.find((s) => s.id === saldoId)!;
-            saldo.restituirDias(cantidad);
-            await this.saldoRepo.guardar(saldo, tx);
-        }
     }
 
     private async notificar(empleado: Empleado, solicitud: SolicitudVacaciones, revocadoPorId: string, diasARevocar: Date[]): Promise<void> {

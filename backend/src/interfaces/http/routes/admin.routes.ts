@@ -45,8 +45,8 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminDeps): void
     const iniciarSesionAdmin = new IniciarSesionAdmin(deps.adminRepo, deps.passwordHasher);
     const listarDepartamentos = new ListarDepartamentos(deps.empleadoRepo);
     const listarEmpleadosPorDepartamento = new ListarEmpleadosPorDepartamento(deps.empleadoRepo, deps.saldoRepo);
-    const listarVacacionesCriticas = new ListarVacacionesCriticas(deps.empleadoRepo, deps.saldoRepo);
-    const obtenerDetalleEmpleadoAdmin = new ObtenerDetalleEmpleadoAdmin(deps.empleadoRepo, deps.saldoRepo);
+    const listarVacacionesCriticas = new ListarVacacionesCriticas(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo);
+    const obtenerDetalleEmpleadoAdmin = new ObtenerDetalleEmpleadoAdmin(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo);
     const actualizarCorreosJefes = new ActualizarCorreosJefes(deps.empleadoRepo, deps.importacionCorreosRepo);
     const listarCorreosJefes = new ListarCorreosJefes(deps.empleadoRepo);
     const asignarCorreoJefe = new AsignarCorreoJefe(deps.empleadoRepo);

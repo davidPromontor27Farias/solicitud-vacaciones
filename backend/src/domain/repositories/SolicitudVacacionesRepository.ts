@@ -28,6 +28,7 @@ export interface SolicitudVacacionesRepository{
     actualizar(solicitud: SolicitudVacaciones, tx?: unknown): Promise<void>;
     listarPorEmpleado(filtro: FiltroHistorial): Promise<ResultadoPaginado <SolicitudVacaciones>>;
     listarAprobadasPorEmpleado(empleadoId: string): Promise<SolicitudVacaciones[]>;
+    listarAprobadasTodas(): Promise<SolicitudVacaciones[]>;
     listarPendientesPorJefeDirecto(jefeDirectoId: string): Promise<SolicitudVacaciones[]>;
     listarPorEquipo(jefeDirectoId: string, desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>;
     listarPorJefeMatricial(jefeMatricialId: string, desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>;
