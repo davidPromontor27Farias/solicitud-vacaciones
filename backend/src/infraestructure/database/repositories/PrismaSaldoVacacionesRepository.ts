@@ -29,8 +29,9 @@ function toDomain(row: {
 export class PrismaSaldoVacacionesRepository implements SaldoVacacionesRepository {
     constructor(private prisma: PrismaClient) {}
 
-    async listarPorEmpleadoId(empleadoId: string): Promise<SaldoVacaciones[]> {
-        const rows = await this.prisma.saldoVacaciones.findMany({ where: { empleadoId } });
+    async listarPorEmpleadoId(empleadoId: string, tx?: unknown): Promise<SaldoVacaciones[]> {
+        const cliente = (tx as PrismaClient) ?? this.prisma;
+        const rows = await cliente.saldoVacaciones.findMany({ where: { empleadoId } });
         return rows.map(toDomain);
     }
 

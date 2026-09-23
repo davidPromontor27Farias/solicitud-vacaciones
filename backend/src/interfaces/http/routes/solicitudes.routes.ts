@@ -34,6 +34,7 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
         deps.emailNotifier,
         deps.idGenerator,
         deps.enlaceGenerator,
+        deps.txManager,
     );
 
     const aprobarSolicitud = new AprobarSolicitud(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo, deps.emailNotifier, deps.enlaceGenerator, deps.txManager)

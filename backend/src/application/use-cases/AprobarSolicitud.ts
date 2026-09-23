@@ -27,12 +27,12 @@ export class AprobarSolicitud {
     ) {}
 
     async ejecutar(input: AprobarSolicitudInput): Promise<SolicitudVacaciones> {
-        const solicitud = await this.solicitudRepo.buscarPorId(input.solicitudId);
-        if (!solicitud) {
+        const solicitudInicial = await this.solicitudRepo.buscarPorId(input.solicitudId);
+        if (!solicitudInicial) {
             throw new NotFoundError('Solicitud no encontrada');
         }
 
-        const empleado = await this.empleadoRepo.buscarPorId(solicitud.empleadoId);
+        const empleado = await this.empleadoRepo.buscarPorId(solicitudInicial.empleadoId);
         if (!empleado) {
             throw new NotFoundError('Empleado no encontrado');
         }
@@ -41,53 +41,65 @@ export class AprobarSolicitud {
             throw new UnauthorizedError('No tienes permiso para aprobar esta solicitud');
         }
 
-        const opcionesBackup = dividirNombres(solicitud.backupNombre ?? '');
-        if (opcionesBackup.length > 1) {
-            if (!input.backupSeleccionado?.trim()) {
-                throw new ValidationError('Selecciona quién cubrirá al empleado');
+        // Todo lo que lee y luego decide con base en el saldo del empleado (dias vigentes,
+        // solicitudes ya aprobadas) va dentro de la transaccion, despues de tomar el lock:
+        // asi, si dos aprobaciones del mismo empleado llegan casi al mismo tiempo, la segunda
+        // espera a que la primera termine y vuelve a leer el estado ya actualizado, en vez de
+        // validar las dos contra el mismo saldo desactualizado.
+        const solicitud = await this.txtManager.ejecutar(async (tx) => {
+            await this.empleadoRepo.bloquearParaEscritura(empleado.id, tx);
+
+            const solicitud = await this.solicitudRepo.buscarPorId(input.solicitudId, tx);
+            if (!solicitud) {
+                throw new NotFoundError('Solicitud no encontrada');
             }
-            try {
-                solicitud.seleccionarBackup(input.backupSeleccionado.trim());
-            } catch (error) {
-                throw new ValidationError(error instanceof Error ? error.message : 'Backup seleccionado inválido');
+
+            const opcionesBackup = dividirNombres(solicitud.backupNombre ?? '');
+            if (opcionesBackup.length > 1) {
+                if (!input.backupSeleccionado?.trim()) {
+                    throw new ValidationError('Selecciona quién cubrirá al empleado');
+                }
+                try {
+                    solicitud.seleccionarBackup(input.backupSeleccionado.trim());
+                } catch (error) {
+                    throw new ValidationError(error instanceof Error ? error.message : 'Backup seleccionado inválido');
+                }
             }
-        }
 
-        const dias = solicitud.dias;
-        const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id);
+            const dias = solicitud.dias;
+            const saldos = await this.saldoRepo.listarPorEmpleadoId(empleado.id, tx);
 
-        const diaSinSaldoVigente = dias.find((dia) => !saldos.some((s) => s.estaVigente(dia)));
-        if (diaSinSaldoVigente) {
-            throw new ValidationError(`El empleado ya no cuenta con saldo vigente para el ${diaSinSaldoVigente.toISOString().slice(0, 10)}`);
-        }
+            const diaSinSaldoVigente = dias.find((dia) => !saldos.some((s) => s.estaVigente(dia)));
+            if (diaSinSaldoVigente) {
+                throw new ValidationError(`El empleado ya no cuenta con saldo vigente para el ${diaSinSaldoVigente.toISOString().slice(0, 10)}`);
+            }
 
-        const vigentes = saldos.filter((s) => dias.some((dia) => s.estaVigente(dia)));
+            const vigentes = saldos.filter((s) => dias.some((dia) => s.estaVigente(dia)));
 
-        // El descuento real no se aplica aqui: los dias aprobados se quedan en "programados"
-        // y solo se convierten en dias disfrutados (restando de los disponibles) cuando su
-        // fecha ya paso. Por eso la validacion usa el saldo efectivo (ya descontando lo que
-        // otras solicitudes aprobadas de este empleado ya tienen reservado), no el saldo bruto.
-        const aprobadasExistentes = await this.solicitudRepo.listarAprobadasPorEmpleado(empleado.id);
-        const { pasados, futuros } = calcularDiasPasadosYFuturos(saldos, aprobadasExistentes);
+            // El descuento real no se aplica aqui: los dias aprobados se quedan en "programados"
+            // y solo se convierten en dias disfrutados (restando de los disponibles) cuando su
+            // fecha ya paso. Por eso la validacion usa el saldo efectivo (ya descontando lo que
+            // otras solicitudes aprobadas de este empleado ya tienen reservado), no el saldo bruto.
+            const aprobadasExistentes = await this.solicitudRepo.listarAprobadasPorEmpleado(empleado.id, tx);
+            const { pasados, futuros } = calcularDiasPasadosYFuturos(saldos, aprobadasExistentes);
 
-        const totalDisponible = vigentes.reduce((acc, s) => {
-            const consumo = calcularConsumoSaldo(s, pasados.get(s.id) ?? 0, futuros.get(s.id) ?? 0);
-            return acc + consumo.diasPendientesEfectivo;
-        }, 0);
-        if (totalDisponible < solicitud.cantidadDias) {
-            throw new ValidationError('El empleado ya no cuenta con suficientes días disponibles');
-        }
+            const totalDisponible = vigentes.reduce((acc, s) => {
+                const consumo = calcularConsumoSaldo(s, pasados.get(s.id) ?? 0, futuros.get(s.id) ?? 0);
+                return acc + consumo.diasPendientesEfectivo;
+            }, 0);
+            if (totalDisponible < solicitud.cantidadDias) {
+                throw new ValidationError('El empleado ya no cuenta con suficientes días disponibles');
+            }
 
-        await this.txtManager.ejecutar(async (tx) => {
             try {
                 solicitud.aprobar();
-
-            } catch(error){
+            } catch (error) {
                 throw new ValidationError(error instanceof Error ? error.message : 'No se pudo aporbar la solicitud');
             }
 
             await this.solicitudRepo.actualizar(solicitud, tx);
-        })
+            return solicitud;
+        });
 
         await this.notificar(empleado, solicitud);
 

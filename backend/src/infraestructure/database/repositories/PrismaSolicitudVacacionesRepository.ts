@@ -37,9 +37,10 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
 
     constructor(private prisma: PrismaClient){}
 
-    async crear(solicitud: SolicitudVacaciones): Promise<void>{
+    async crear(solicitud: SolicitudVacaciones, tx?: unknown): Promise<void>{
+        const cliente = (tx as PrismaClient) ?? this.prisma;
         const props = solicitud.toProps();
-        await this.prisma.solicitudVacaciones.create({
+        await cliente.solicitudVacaciones.create({
             data:{
                 id: props.id,
                 empleadoId: props.empleadoId,
@@ -52,8 +53,9 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
         })
     }
 
-    async buscarPorId(id: string): Promise<SolicitudVacaciones | null> {
-        const row = await this.prisma.solicitudVacaciones.findUnique({
+    async buscarPorId(id: string, tx?: unknown): Promise<SolicitudVacaciones | null> {
+        const cliente = (tx as PrismaClient) ?? this.prisma;
+        const row = await cliente.solicitudVacaciones.findUnique({
             where: {id},
             include: {diasSolicitados: {orderBy: {fecha: 'asc'}}},
         });
@@ -97,8 +99,9 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
         }
     }
 
-    async listarAprobadasPorEmpleado(empleadoId: string): Promise<SolicitudVacaciones[]> {
-        const rows = await this.prisma.solicitudVacaciones.findMany({
+    async listarAprobadasPorEmpleado(empleadoId: string, tx?: unknown): Promise<SolicitudVacaciones[]> {
+        const cliente = (tx as PrismaClient) ?? this.prisma;
+        const rows = await cliente.solicitudVacaciones.findMany({
             where: { empleadoId, estatus: 'aprobada' },
             include: { diasSolicitados: { orderBy: { fecha: 'asc' } } },
         });

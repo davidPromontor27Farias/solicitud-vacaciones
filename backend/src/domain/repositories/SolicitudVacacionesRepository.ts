@@ -23,11 +23,11 @@ export interface ResultadoPaginado<T>{
 
 
 export interface SolicitudVacacionesRepository{
-    crear(solicitud: SolicitudVacaciones): Promise<void>;
-    buscarPorId(id: string): Promise<SolicitudVacaciones | null>;
+    crear(solicitud: SolicitudVacaciones, tx?: unknown): Promise<void>;
+    buscarPorId(id: string, tx?: unknown): Promise<SolicitudVacaciones | null>;
     actualizar(solicitud: SolicitudVacaciones, tx?: unknown): Promise<void>;
     listarPorEmpleado(filtro: FiltroHistorial): Promise<ResultadoPaginado <SolicitudVacaciones>>;
-    listarAprobadasPorEmpleado(empleadoId: string): Promise<SolicitudVacaciones[]>;
+    listarAprobadasPorEmpleado(empleadoId: string, tx?: unknown): Promise<SolicitudVacaciones[]>;
     listarAprobadasTodas(): Promise<SolicitudVacaciones[]>;
     listarPendientesPorJefeDirecto(jefeDirectoId: string): Promise<SolicitudVacaciones[]>;
     listarPorEquipo(jefeDirectoId: string, desde: Date, hasta: Date): Promise<SolicitudVacaciones[]>;

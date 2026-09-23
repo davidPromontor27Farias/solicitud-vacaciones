@@ -1,7 +1,7 @@
 import { SaldoVacaciones } from '../entities/SaldoVacaciones';
 
 export interface SaldoVacacionesRepository {
-  listarPorEmpleadoId(empleadoId: string): Promise<SaldoVacaciones[]>;
+  listarPorEmpleadoId(empleadoId: string, tx?: unknown): Promise<SaldoVacaciones[]>;
   listarConDiasPendientes(): Promise<SaldoVacaciones[]>;
   listarTodos(): Promise<SaldoVacaciones[]>;
   crear(saldo: SaldoVacaciones): Promise<void>;

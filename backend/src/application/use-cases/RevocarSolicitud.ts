@@ -39,12 +39,12 @@ export class RevocarSolicitud {
     ) {}
 
     async ejecutar(input: RevocarSolicitudInput): Promise<SolicitudVacaciones> {
-        const solicitud = await this.solicitudRepo.buscarPorId(input.solicitudId);
-        if (!solicitud) {
+        const solicitudInicial = await this.solicitudRepo.buscarPorId(input.solicitudId);
+        if (!solicitudInicial) {
             throw new NotFoundError('Solicitud no encontrada');
         }
 
-        const empleado = await this.empleadoRepo.buscarPorId(solicitud.empleadoId);
+        const empleado = await this.empleadoRepo.buscarPorId(solicitudInicial.empleadoId);
         if (!empleado) {
             throw new NotFoundError('Empleado no encontrado');
         }
@@ -53,28 +53,41 @@ export class RevocarSolicitud {
             throw new UnauthorizedError('No tienes permiso para revocar esta solicitud');
         }
 
-        // Se deduplica por si el cliente manda la misma fecha repetida: sin esto se
-        // restituirian/contarian de mas los dias duplicados.
-        const diasARevocar = deduplicarDias(input.dias ?? solicitud.diasActivos);
-        const hoy = inicioDelDiaUtc(new Date());
-        const diaNoFuturo = diasARevocar.find((dia) =>inicioDelDiaUtc(dia) <= hoy);
-        if(diaNoFuturo){
-            throw new ValidationError('Solo se pueden revocar días que aún no han ocurrido');
-        }
+        // Se bloquea al empleado y se vuelve a leer la solicitud ya con el lock tomado: si
+        // dos revocaciones (o una revocacion y una aprobacion) del mismo empleado llegan casi
+        // al mismo tiempo, la segunda espera a que la primera termine y ve los dias ya
+        // marcados como revocados, en vez de calcular "dias activos" con datos obsoletos.
+        const { solicitud, diasARevocar } = await this.txtManager.ejecutar(async (tx) => {
+            await this.empleadoRepo.bloquearParaEscritura(empleado.id, tx);
 
-        try {
-            solicitud.revocarDias(diasARevocar, input.motivo, input.revocadoPorId);
-        } catch (error) {
-            throw new ValidationError(error instanceof Error ? error.message : 'No se pudo revocar la solicitud');
-        }
+            const solicitud = await this.solicitudRepo.buscarPorId(input.solicitudId, tx);
+            if (!solicitud) {
+                throw new NotFoundError('Solicitud no encontrada');
+            }
 
-        // No hace falta restituir saldo: los dias futuros de una solicitud aprobada nunca se
-        // descontaron (solo se descuentan al pasar la fecha), asi que revocarlos mientras
-        // siguen en el futuro solo implica quitarlos de "programados".
-        await this.txtManager.ejecutar(async (tx) =>{
+            // Se deduplica por si el cliente manda la misma fecha repetida: sin esto se
+            // restituirian/contarian de mas los dias duplicados.
+            const diasARevocar = deduplicarDias(input.dias ?? solicitud.diasActivos);
+            const hoy = inicioDelDiaUtc(new Date());
+            const diaNoFuturo = diasARevocar.find((dia) => inicioDelDiaUtc(dia) <= hoy);
+            if (diaNoFuturo) {
+                throw new ValidationError('Solo se pueden revocar días que aún no han ocurrido');
+            }
+
+            try {
+                solicitud.revocarDias(diasARevocar, input.motivo, input.revocadoPorId);
+            } catch (error) {
+                throw new ValidationError(error instanceof Error ? error.message : 'No se pudo revocar la solicitud');
+            }
+
+            // No hace falta restituir saldo: los dias futuros de una solicitud aprobada nunca se
+            // descontaron (solo se descuentan al pasar la fecha), asi que revocarlos mientras
+            // siguen en el futuro solo implica quitarlos de "programados".
             await this.solicitudRepo.actualizar(solicitud, tx);
             await this.solicitudRepo.marcarDiasRevocados(solicitud.id, diasARevocar, tx);
-        })
+
+            return { solicitud, diasARevocar };
+        });
 
         await this.notificar(empleado, solicitud, input.revocadoPorId, diasARevocar);
 

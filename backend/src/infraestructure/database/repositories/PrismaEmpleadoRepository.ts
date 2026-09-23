@@ -15,6 +15,11 @@ export class PrismaEmpleadoRepository implements EmpleadoRepository{
         return row ? toDomain(row) : null;
     }
 
+    async bloquearParaEscritura(id: string, tx: unknown): Promise<void> {
+        const cliente = (tx as PrismaClient) ?? this.prisma;
+        await cliente.$queryRaw`SELECT id FROM empleados WHERE id = ${id} FOR UPDATE`;
+    }
+
     async buscarPorNumeroEmpleado(numeroEmpleado: string): Promise<Empleado | null> {
         const row = await this.prisma.empleado.findUnique({where: {numeroEmpleado}})
         return row ? toDomain(row) : null;
