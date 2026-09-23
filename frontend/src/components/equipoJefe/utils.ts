@@ -16,16 +16,6 @@ export function formatearFecha(iso: string): string {
     });
 }
 
-export function iniciales(nombre: string): string {
-    return nombre
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((parte) => parte[0])
-        .join('')
-        .toUpperCase();
-}
-
 // De todos los periodos de un empleado, el que este mas cerca de hoy (sin importar si
 // ya vencio o esta por vencer), para ordenar a los empleados por urgencia.
 export function fechaMasCercana(saldos: EmpleadoEquipo['saldos']): string {

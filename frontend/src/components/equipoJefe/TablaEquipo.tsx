@@ -1,5 +1,5 @@
 import { GLASS } from '../../utils/estilos';
-import { construirFilaEquipo, formatearFecha, iniciales, type EmpleadoConPeriodos, type FiltroSemaforo } from './utils';
+import { construirFilaEquipo, formatearFecha, type EmpleadoConPeriodos, type FiltroSemaforo } from './utils';
 
 const TH = 'text-center px-1.5 py-2.5 font-semibold text-white/90 uppercase tracking-wide text-[11px] leading-tight';
 const TD = 'px-1.5 py-2.5 text-center align-middle';
@@ -50,14 +50,7 @@ export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPerio
                         {filas.map((fila, indice) => (
                             <tr key={fila.empleadoId} className={indice % 2 === 1 ? 'bg-white/5' : ''}>
                                 <td className="px-2 py-2.5">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <div className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center font-semibold text-[10px] bg-white/15 text-white">
-                                            {iniciales(fila.nombre)}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-white font-medium text-[13px] leading-tight break-words">{fila.nombre}</p>
-                                        </div>
-                                    </div>
+                                    <p className="text-white font-medium text-[13px] leading-tight break-words">{fila.nombre}</p>
                                 </td>
                                 {mostrarBasicas && (
                                     <>
