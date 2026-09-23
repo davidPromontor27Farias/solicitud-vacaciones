@@ -158,17 +158,11 @@ model NotificacionEmail {
   @@map("notificaciones_email")
 }
 
-enum RolAdmin {
-  lectura
-  nominas
-}
-
 model Admin {
   id           String   @id @default(uuid())
   usuario      String   @unique
   nombre       String
   passwordHash String   @map("password_hash")
-  rol          RolAdmin @default(lectura)
 
   importaciones        ImportacionNomina[]
   importacionesCorreos ImportacionCorreosJefes[]

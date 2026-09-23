@@ -4,16 +4,12 @@ import { PrismaClient } from '@prisma/client';
 
 const SALT_ROUNDS = 12;
 
-const argumentos = process.argv.slice(2);
-const ultimoEsRol = argumentos[argumentos.length - 1] === 'lectura' || argumentos[argumentos.length - 1] === 'nominas';
-const rol = ultimoEsRol ? (argumentos.pop() as 'lectura' | 'nominas') : 'lectura';
-
-const [usuario, password, ...resto] = argumentos;
+const [usuario, password, ...resto] = process.argv.slice(2);
 const nombre = resto.join(' ');
 
 if (!usuario || !password || !nombre) {
-    console.error('Uso: npm run crear:admin -- <usuario> <password> <nombre completo> [lectura|nominas]');
-    console.error('Ejemplo: npm run crear:admin -- jperez Cont2026Segura! "Juan Pérez" nominas');
+    console.error('Uso: npm run crear:admin -- <usuario> <password> <nombre completo>');
+    console.error('Ejemplo: npm run crear:admin -- jperez Cont2026Segura! "Juan Pérez"');
     process.exit(1);
 }
 
@@ -29,11 +25,11 @@ async function main() {
 
     const admin = await prisma.admin.upsert({
         where: { usuario },
-        update: { passwordHash, nombre, rol },
-        create: { usuario, passwordHash, nombre, rol },
+        update: { passwordHash, nombre },
+        create: { usuario, passwordHash, nombre },
     });
 
-    console.log(`Admin listo: ${admin.usuario} (${admin.nombre}) — rol: ${admin.rol}`);
+    console.log(`Admin listo: ${admin.usuario} (${admin.nombre})`);
 }
 
 main()

@@ -68,7 +68,7 @@ export const useCorreosJefes = () => {
     const conCorreo = items.filter((i) => i.correoAutorizacion);
     const busquedaNorm = busqueda.trim().toLowerCase();
     const filasVisibles = busquedaNorm
-        ? conCorreo.filter((i) => i.nombre.toLowerCase().includes(busquedaNorm) || i.numeroEmpleado.includes(busquedaNorm))
+        ? conCorreo.filter((i) => i.nombre.toLowerCase().includes(busquedaNorm) || i.numeroEmpleado.toLowerCase().includes(busquedaNorm))
         : conCorreo;
 
     return {

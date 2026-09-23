@@ -16,19 +16,11 @@ import { DashboardPage } from './pages/DashboardPage';
 import { RevisarSolicitudPage } from './pages/RevisarSolicitudPage';
 import { RecuperarPasswordPage } from './pages/RecuperarPasswordPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
-import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminNominasPage } from './pages/AdminNominasPage';
 import { JefeEquipoPage } from './pages/JefeEquipoPage';
 import { JefeCalendarioPage } from './pages/JefeCalendarioPage';
 import { JefeTodosDepartamentosPage } from './pages/JefeTodosDepartamentosPage';
 import { JefeMatricialPage } from './pages/JefeMatricialPage';
-import { useAdminAuth } from './context/AdminAuthContext';
-
-function AdminHomePage() {
-    const { admin } = useAdminAuth();
-    return admin?.rol === 'nominas' ? <AdminNominasPage /> : <AdminDashboardPage />;
-}
-
 
 export default function App() {
     return (
@@ -49,12 +41,11 @@ export default function App() {
                         <Route path="/admin/login" element={<AdminLoginPage />} />
                         <Route element={<RutaProtegidaAdmin />}>
                             <Route element={<AdminLayout />}>
-                                <Route path="/admin" element={<AdminHomePage />} />
-                                <Route path="/admin/registros" element={<AdminHomePage />} />
-                                <Route path="/admin/reporte-vacaciones" element={<AdminHomePage />} />
-                                <Route path="/admin/historial-cargas" element={<AdminHomePage />} />
-                                <Route path="/admin/nomina-solicitudes" element={<AdminHomePage />} />
-                                <Route path="/admin/nomina-reportes" element={<AdminHomePage />} />
+                                <Route path="/admin" element={<AdminNominasPage />} />
+                                <Route path="/admin/reporte-vacaciones" element={<AdminNominasPage />} />
+                                <Route path="/admin/historial-cargas" element={<AdminNominasPage />} />
+                                <Route path="/admin/nomina-solicitudes" element={<AdminNominasPage />} />
+                                <Route path="/admin/nomina-reportes" element={<AdminNominasPage />} />
                             </Route>
                         </Route>
                         <Route element={<RutaProtegidaJefe />}>

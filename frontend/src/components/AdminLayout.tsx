@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAdminAuth } from '../context/AdminAuthContext';
-import { LogOut, ChevronLeft, ChevronRight, LayoutGrid, List, Mail, FileSpreadsheet, FileClock, Download } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight, List, Mail, FileSpreadsheet, FileClock, Download } from 'lucide-react';
 
 export function AdminLayout() {
     const { admin, cerrarSesion } = useAdminAuth();
@@ -40,36 +40,7 @@ export function AdminLayout() {
                         )}
                     </div>
 
-                    {admin?.rol !== 'nominas' ? (
-                        <nav className="px-3 py-2 flex sm:flex-col gap-1">
-                            <NavLink
-                                to="/admin"
-                                end
-                                title="Dashboards"
-                                className={({ isActive }) =>
-                                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                        isActive ? 'bg-[#4a8b2c]/10 text-[#4a8b2c]' : 'text-gray-600 hover:bg-gray-100'
-                                    }`
-                                }
-                            >
-                                <LayoutGrid className="w-4 h-4 shrink-0" />
-                                {!colapsado && 'Dashboards'}
-                            </NavLink>
-                            <NavLink
-                                to="/admin/registros"
-                                title="Registros"
-                                className={({ isActive }) =>
-                                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                        isActive ? 'bg-[#4a8b2c]/10 text-[#4a8b2c]' : 'text-gray-600 hover:bg-gray-100'
-                                    }`
-                                }
-                            >
-                                <List className="w-4 h-4 shrink-0" />
-                                {!colapsado && 'Registros'}
-                            </NavLink>
-                        </nav>
-                    ) : (
-                        <nav className="px-3 py-2 flex flex-col gap-1">
+                    <nav className="px-3 py-2 flex flex-col gap-1">
                             <NavLink
                                 to="/admin"
                                 end
@@ -132,7 +103,6 @@ export function AdminLayout() {
                                 {!colapsado && 'Reportes'}
                             </NavLink>
                         </nav>
-                    )}
 
                     <div className="sm:mt-auto p-4 border-t border-gray-200 flex items-center justify-between gap-3 sm:flex-col sm:items-stretch">
                         {!colapsado && admin && <span className="text-gray-500 text-xs truncate">{admin.nombre}</span>}

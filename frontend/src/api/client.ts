@@ -69,7 +69,6 @@ export interface AdminSesion {
     id: string;
     nombre: string;
     usuario: string;
-    rol: 'lectura' | 'nominas';
 }
 
 export function getAdminToken(): string | null {
