@@ -117,9 +117,26 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
         return rows.map(toDomain);
     }
 
+    async listarRechazadasPorEmpleados(empleadoIds: string[]): Promise<SolicitudVacaciones[]> {
+        if (empleadoIds.length === 0) return [];
+        const rows = await this.prisma.solicitudVacaciones.findMany({
+            where: { empleadoId: { in: empleadoIds }, estatus: 'rechazada' },
+            include: { diasSolicitados: { orderBy: { fecha: 'asc' } } },
+        });
+        return rows.map(toDomain);
+    }
+
     async listarAprobadasTodas(): Promise<SolicitudVacaciones[]> {
         const rows = await this.prisma.solicitudVacaciones.findMany({
             where: { estatus: 'aprobada' },
+            include: { diasSolicitados: { orderBy: { fecha: 'asc' } } },
+        });
+        return rows.map(toDomain);
+    }
+
+    async listarRechazadasTodas(): Promise<SolicitudVacaciones[]> {
+        const rows = await this.prisma.solicitudVacaciones.findMany({
+            where: { estatus: 'rechazada' },
             include: { diasSolicitados: { orderBy: { fecha: 'asc' } } },
         });
         return rows.map(toDomain);

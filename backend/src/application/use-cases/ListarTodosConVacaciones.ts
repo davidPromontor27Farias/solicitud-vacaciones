@@ -14,10 +14,11 @@ export class ListarTodosConVacaciones {
     ) {}
 
     async ejecutar(fechaReferencia: Date = new Date()): Promise<EmpleadoEquipoResultado[]> {
-        const [empleados, saldos, aprobadas] = await Promise.all([
+        const [empleados, saldos, aprobadas, rechazadas] = await Promise.all([
             this.empleadoRepo.listarTodos(),
             this.saldoRepo.listarTodos(),
             this.solicitudRepo.listarAprobadasTodas(),
+            this.solicitudRepo.listarRechazadasTodas(),
         ]);
 
         const saldosPorEmpleadoId = new Map<string, typeof saldos>();
@@ -32,6 +33,14 @@ export class ListarTodosConVacaciones {
             const lista = aprobadasPorEmpleadoId.get(solicitud.empleadoId) ?? [];
             lista.push(solicitud);
             aprobadasPorEmpleadoId.set(solicitud.empleadoId, lista);
+        }
+
+        const diasRechazadosPorEmpleadoId = new Map<string, number>();
+        for (const solicitud of rechazadas) {
+            diasRechazadosPorEmpleadoId.set(
+                solicitud.empleadoId,
+                (diasRechazadosPorEmpleadoId.get(solicitud.empleadoId) ?? 0) + solicitud.cantidadDias,
+            );
         }
 
         const resultado: EmpleadoEquipoResultado[] = [];
@@ -52,6 +61,7 @@ export class ListarTodosConVacaciones {
                 nombre: empleado.nombre,
                 departamento: empleado.departamento?.trim() || SIN_DEPARTAMENTO,
                 puesto: empleado.puesto,
+                diasRechazados: diasRechazadosPorEmpleadoId.get(empleado.id) ?? 0,
                 saldos: saldosOrdenados.map((saldo) => {
                     const estado: SaldoEquipoResultado['estado'] = saldo.estaVencido(fechaReferencia)
                         ? 'vencido'

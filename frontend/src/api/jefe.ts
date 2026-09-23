@@ -35,6 +35,7 @@ export interface EmpleadoEquipo {
     nombre: string;
     departamento: string | null;
     puesto: string | null;
+    diasRechazados: number;
     saldos: SaldoEquipo[];
 }
 

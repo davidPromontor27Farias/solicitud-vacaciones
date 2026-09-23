@@ -6,6 +6,7 @@ export interface EmpleadoConPeriodos {
     empleadoId: string;
     nombre: string;
     ordenFecha: string;
+    diasRechazados: number;
     periodos: EmpleadoEquipo['saldos'];
 }
 
@@ -43,6 +44,7 @@ export function construirEmpleadosConPeriodos(equipo: EmpleadoEquipo[]): Emplead
             empleadoId: empleado.empleadoId,
             nombre: empleado.nombre,
             ordenFecha: fechaMasCercana(empleado.saldos),
+            diasRechazados: empleado.diasRechazados,
             periodos: [...empleado.saldos].sort((a, b) => a.fechaLimiteDisfrute.localeCompare(b.fechaLimiteDisfrute)),
         }))
         .sort((a, b) => a.ordenFecha.localeCompare(b.ordenFecha));
@@ -61,6 +63,7 @@ export interface FilaEquipo {
     otrosDisponibles: number;
     fechaProximaLimite: string | null;
     programados: number;
+    rechazados: number;
 }
 
 // La fecha mas urgente dentro de un grupo de periodos: la mas antigua si ya vencieron
@@ -107,5 +110,6 @@ export function construirFilaEquipo(empleado: EmpleadoConPeriodos): FilaEquipo {
         otrosDisponibles, fechaProximaLimite: otrosDisponibles > 0 ? fechaMasUrgente(periodosVigentes) : null,
         vencidos, fechaVencido: vencidos > 0 ? fechaMasUrgente(periodosVencidos) : null,
         programados,
+        rechazados: empleado.diasRechazados,
     };
 }

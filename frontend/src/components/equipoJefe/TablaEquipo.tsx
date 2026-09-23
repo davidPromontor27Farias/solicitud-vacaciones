@@ -20,6 +20,7 @@ export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPerio
                                 <>
                                     <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Días generados</th>
                                     <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Días disfrutados</th>
+                                    <th className="text-center px-4 py-3 font-semibold text-white/90 uppercase tracking-wide text-xs">Días rechazados</th>
                                 </>
                             )}
                             {mostrarDisponibles && (
@@ -59,6 +60,9 @@ export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPerio
                                     <>
                                         <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{fila.total}</td>
                                         <td className="px-4 py-3.5 text-center text-white/90 font-semibold">{fila.tomados}</td>
+                                        <td className={`px-4 py-3.5 text-center font-semibold ${fila.rechazados > 0 ? 'text-red-300' : 'text-white/40'}`}>
+                                            {fila.rechazados}
+                                        </td>
                                     </>
                                 )}
                                 {mostrarDisponibles && (

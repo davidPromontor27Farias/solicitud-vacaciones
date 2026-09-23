@@ -22,6 +22,7 @@ export interface EmpleadoEquipoResultado {
     nombre: string;
     departamento: string | null;
     puesto: string | null;
+    diasRechazados: number;
     saldos: SaldoEquipoResultado[];
 }
 
@@ -39,9 +40,10 @@ export class ListarEquipoConVacaciones {
         // Se trae el saldo y las solicitudes aprobadas de todo el equipo en 2 consultas (no una
         // por empleado): con equipos grandes, N consultas secuenciales hacian que la pantalla
         // tardara decenas de segundos en cargar.
-        const [todosSaldos, todasAprobadas] = await Promise.all([
+        const [todosSaldos, todasAprobadas, todasRechazadas] = await Promise.all([
             this.saldoRepo.listarPorEmpleadoIds(empleadoIds),
             this.solicitudRepo.listarAprobadasPorEmpleados(empleadoIds),
+            this.solicitudRepo.listarRechazadasPorEmpleados(empleadoIds),
         ]);
 
         const saldosPorEmpleadoId = new Map<string, typeof todosSaldos>();
@@ -55,6 +57,16 @@ export class ListarEquipoConVacaciones {
             const lista = aprobadasPorEmpleadoId.get(solicitud.empleadoId) ?? [];
             lista.push(solicitud);
             aprobadasPorEmpleadoId.set(solicitud.empleadoId, lista);
+        }
+
+        // Una solicitud rechazada se rechaza completa (no hay rechazo parcial de dias, a
+        // diferencia de la revocacion), asi que todos sus dias cuentan.
+        const diasRechazadosPorEmpleadoId = new Map<string, number>();
+        for (const solicitud of todasRechazadas) {
+            diasRechazadosPorEmpleadoId.set(
+                solicitud.empleadoId,
+                (diasRechazadosPorEmpleadoId.get(solicitud.empleadoId) ?? 0) + solicitud.cantidadDias,
+            );
         }
 
         const resultado: EmpleadoEquipoResultado[] = [];
@@ -76,6 +88,7 @@ export class ListarEquipoConVacaciones {
                 nombre: empleado.nombre,
                 departamento: empleado.departamento,
                 puesto: empleado.puesto,
+                diasRechazados: diasRechazadosPorEmpleadoId.get(empleado.id) ?? 0,
                 saldos: saldosOrdenados.map((saldo) => {
                     const estado: SaldoEquipoResultado['estado'] = saldo.estaVencido(fechaReferencia)
                         ? 'vencido'
