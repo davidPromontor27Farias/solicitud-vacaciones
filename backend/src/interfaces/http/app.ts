@@ -1,11 +1,8 @@
-import path from 'node:path';
-import { existsSync } from 'node:fs';
 import helmet from '@fastify/helmet';
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
-import fastifyStatic from '@fastify/static';
 import multipart from '@fastify/multipart';
 import { ZodError } from 'zod';
 import { Prisma, PrismaClient } from '@prisma/client';
@@ -97,25 +94,6 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
         registerAdminRoutes(api, {adminRepo, empleadoRepo, saldoRepo, solicitudRepo, importacionNominaRepo, importacionCorreosRepo, passwordHasher, idGenerator})
         registerJefeRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, enlaceGenerator, emailNotifier, txManager });
     }, { prefix: '/api' });
-
-    // En producción, la imagen de Docker copia el build del frontend a ./public
-    // (hermano de dist/). En desarrollo esa carpeta no existe: el frontend se
-    // sirve aparte con Vite, así que el estático se omite y no rompe el arranque.
-    const carpetaFrontend = path.join(__dirname, '../../../public');
-    if (existsSync(carpetaFrontend)) {
-        app.register(fastifyStatic, {
-            root: carpetaFrontend,
-            wildcard: false,
-        });
-
-        app.setNotFoundHandler((request, reply) => {
-            if (request.method !== 'GET' || request.url.startsWith('/api/')) {
-                reply.status(404).send({ error: 'No encontrado' });
-                return;
-            }
-            reply.sendFile('index.html');
-        });
-    }
 
     return app;
 }
