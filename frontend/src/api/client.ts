@@ -1,3 +1,8 @@
+// URL absoluta del backend cuando el frontend se sirve desde otro origen (ej. Vercel,
+// con el backend en Railway). Si no se define, se asume mismo origen (como hoy, cuando
+// el propio backend sirve el frontend) y se usa la ruta relativa /api.
+export const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') || '/api';
+
 const TOKEN_KEY = 'vacaciones_token';
 const USUARIO_KEY = 'vacaciones_usuario';
 
@@ -47,7 +52,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
         headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/api${path}`, { ...options, headers });
+    const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
     if (response.status === 204) {
         return undefined as T;
@@ -100,7 +105,7 @@ export async function apiFetchAdmin<T>(path: string, options: RequestInit = {}):
         headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/api${path}`, { ...options, headers });
+    const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
     if (response.status === 204) {
         return undefined as T;
@@ -155,7 +160,7 @@ export async function apiFetchJefe<T>(path: string, options: RequestInit = {}): 
         headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/api${path}`, { ...options, headers });
+    const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
     if (response.status === 204) {
         return undefined as T;

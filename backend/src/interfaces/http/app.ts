@@ -33,7 +33,15 @@ import { PrismaTransactionManager } from '../../infraestructure/database/PrismaT
 export function buildApp(prisma: PrismaClient): FastifyInstance {
     const app = Fastify({ logger: false, maxParamLength: 1000, trustProxy: true });
 
-    const origenesPermitidos = [process.env.APP_URL, 'http://localhost:5173'].filter(
+    // CORS_ORIGINS: lista adicional de origenes separados por coma (ej. el dominio de
+    // Vercel del frontend), para cuando el frontend no se sirve desde el mismo origen
+    // que este backend (APP_URL sigue usandose ademas para los enlaces de los correos).
+    const origenesAdicionales = (process.env.CORS_ORIGINS ?? '')
+        .split(',')
+        .map((o) => o.trim())
+        .filter((o) => o.length > 0);
+
+    const origenesPermitidos = [process.env.APP_URL, 'http://localhost:5173', ...origenesAdicionales].filter(
         (o): o is string => Boolean(o),
     )
 

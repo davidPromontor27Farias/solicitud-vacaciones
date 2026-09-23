@@ -1,4 +1,4 @@
-import { apiFetchAdmin, getAdminToken, guardarSesionAdmin, ApiError, type AdminSesion } from './client';
+import { apiFetchAdmin, getAdminToken, guardarSesionAdmin, ApiError, API_BASE, type AdminSesion } from './client';
 
 interface LoginAdminRespuesta {
     token: string;
@@ -30,7 +30,7 @@ async function subirArchivo<T>(ruta: string, archivo: File): Promise<T> {
     const token = getAdminToken();
     let response: Response;
     try {
-        response = await fetch(ruta, {
+        response = await fetch(`${API_BASE}${ruta}`, {
             method: 'POST',
             headers: token ? { Authorization: `Bearer ${token}` } : undefined,
             body: formData,
@@ -47,7 +47,7 @@ async function subirArchivo<T>(ruta: string, archivo: File): Promise<T> {
 }
 
 export function subirCorreosJefes(archivo: File): Promise<ActualizarCorreosJefesResultado> {
-    return subirArchivo('/api/admin/nomina/correos-jefes', archivo);
+    return subirArchivo('/admin/nomina/correos-jefes', archivo);
 }
 
 export interface ImportarReporteVacacionesResultado {
@@ -62,7 +62,7 @@ export interface ImportarReporteVacacionesResultado {
 }
 
 export function subirReporteVacaciones(archivo: File): Promise<ImportarReporteVacacionesResultado> {
-    return subirArchivo('/api/admin/nomina/reporte-vacaciones', archivo);
+    return subirArchivo('/admin/nomina/reporte-vacaciones', archivo);
 }
 
 export interface HistorialCargaItem {
@@ -147,7 +147,7 @@ export function obtenerSolicitudesPorEstatus(
 
 export async function descargarReporteSolicitudes(estatus: EstatusSolicitud): Promise<void> {
     const token = getAdminToken();
-    const response = await fetch(`/api/admin/nomina/reportes/solicitudes?estatus=${estatus}`, {
+    const response = await fetch(`${API_BASE}/admin/nomina/reportes/solicitudes?estatus=${estatus}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
 
@@ -168,7 +168,7 @@ export async function descargarReporteSolicitudes(estatus: EstatusSolicitud): Pr
 export async function descargarReporteVacacionesPeriodo(desde: string, hasta: string): Promise<void> {
     const token = getAdminToken();
     const params = new URLSearchParams({ desde, hasta });
-    const response = await fetch(`/api/admin/nomina/reportes/vacaciones-periodo?${params.toString()}`, {
+    const response = await fetch(`${API_BASE}/admin/nomina/reportes/vacaciones-periodo?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
 
