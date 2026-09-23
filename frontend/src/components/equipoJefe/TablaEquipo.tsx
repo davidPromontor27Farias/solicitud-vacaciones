@@ -55,7 +55,7 @@ export const TablaEquipo = ({ empleados, filtro }: { empleados: EmpleadoConPerio
                                             {iniciales(fila.nombre)}
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-white font-medium truncate text-[13px]">{fila.nombre}</p>
+                                            <p className="text-white font-medium text-[13px] leading-tight break-words">{fila.nombre}</p>
                                         </div>
                                     </div>
                                 </td>
