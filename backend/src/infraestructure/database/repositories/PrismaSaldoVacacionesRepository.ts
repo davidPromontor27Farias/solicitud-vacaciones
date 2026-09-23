@@ -35,6 +35,12 @@ export class PrismaSaldoVacacionesRepository implements SaldoVacacionesRepositor
         return rows.map(toDomain);
     }
 
+    async listarPorEmpleadoIds(empleadoIds: string[]): Promise<SaldoVacaciones[]> {
+        if (empleadoIds.length === 0) return [];
+        const rows = await this.prisma.saldoVacaciones.findMany({ where: { empleadoId: { in: empleadoIds } } });
+        return rows.map(toDomain);
+    }
+
     async listarConDiasPendientes(): Promise<SaldoVacaciones[]> {
         const rows = await this.prisma.saldoVacaciones.findMany({
             where: {diasPendientes: {gt: 0}},
