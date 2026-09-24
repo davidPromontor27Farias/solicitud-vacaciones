@@ -89,7 +89,8 @@ export function construirFilaEquipo(empleado: EmpleadoConPeriodos): FilaEquipo {
     const vencidos = periodosVencidos.reduce((acc, p) => acc + p.diasPendientes, 0);
     const porVencer = periodosPorVencer.reduce((acc, p) => acc + p.diasPendientes, 0);
     const otrosDisponibles = disponibles - porVencer;
-    const programados = periodosPorVencer.reduce((acc, p) => acc + p.diasProgramados, 0);
+    const programados = periodosVigentes.reduce((acc, p) => acc + p.diasProgramados, 0)
+        + periodosPorVencer.reduce((acc, p) => acc + p.diasProgramados, 0);
 
     return {
         empleadoId: empleado.empleadoId,

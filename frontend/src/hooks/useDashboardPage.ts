@@ -7,7 +7,7 @@ import { diasFinDeMes } from '../utils/fechas';
 export type TabId = 'informacion' | 'nueva' | 'mis';
 
 export const useDashboardPage = () => {
-    const [tabActivo, setTabActivo] = useState<TabId>('informacion');
+    const [tabActivo, setTabActivoInterno] = useState<TabId>('informacion');
     const [perfil, setPerfil] = useState<PerfilEmpleado | null>(null);
     const [cargandoPerfil, setCargandoPerfil] = useState(true);
     const [errorPerfil, setErrorPerfil] = useState<string | null>(null);
@@ -90,11 +90,25 @@ export const useDashboardPage = () => {
 
     const finDeMesSeleccionados = diasFinDeMes(diasSeleccionados);
 
+    // El aviso de exito/error de "Nueva solicitud" solo tiene sentido justo despues de
+    // enviar: si el usuario cambia de dias o sale y vuelve a la pestana, ya no aplica.
+    const setTabActivo = (tab: TabId) => {
+        setErrorForm(null);
+        setExitoForm(null);
+        setTabActivoInterno(tab);
+    };
+
+    const manejarCambiarDias = (dias: string[]) => {
+        setErrorForm(null);
+        setExitoForm(null);
+        setDiasSeleccionados(dias);
+    };
+
     return {
         tabActivo, setTabActivo,
         perfil, cargandoPerfil, errorPerfil,
         solicitudes, cargandoLista, errorLista,
-        diasSeleccionados, setDiasSeleccionados,
+        diasSeleccionados, setDiasSeleccionados: manejarCambiarDias,
         errorForm, exitoForm, enviando,
         manejarCrear, finDeMesSeleccionados,
     };
