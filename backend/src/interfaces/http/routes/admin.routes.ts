@@ -119,7 +119,17 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminDeps): void
 
     app.get('/admin/nomina/solicitudes', { preHandler: authenticateAdmin }, async (request) => {
         const query = solicitudesPorEstatusQuerySchema.parse(request.query);
-        return listarSolicitudesPorEstatus.ejecutar(query);
+        const resultado = await listarSolicitudesPorEstatus.ejecutar(query);
+        return {
+            ...resultado,
+            datos: resultado.datos.map((s) => ({
+                ...s,
+                dias: s.dias.map((d) => d.toISOString().slice(0, 10)),
+                diasRevocados: s.diasRevocados.map((d) => d.toISOString().slice(0, 10)),
+                createdAt: s.createdAt.toISOString().slice(0, 10),
+                resueltoAt: s.resueltoAt ? s.resueltoAt.toISOString().slice(0, 10) : null,
+            })),
+        };
     });
 
     app.get('/admin/nomina/reportes/solicitudes', { preHandler: authenticateAdmin }, async (request, reply) => {
