@@ -51,7 +51,11 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
                 return;
             }
             callback(new Error('origen no permitido'), false);
-        }
+        },
+        // Por defecto @fastify/cors solo permite GET,HEAD,POST. La API tambien usa
+        // PUT y DELETE (ej. editar/eliminar correos de jefes), asi que hay que
+        // declararlos explicitamente o el navegador los bloquea en el preflight.
+        methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
     })
 
     app.register(jwt, {secret: process.env.JWT_SECRET!});
