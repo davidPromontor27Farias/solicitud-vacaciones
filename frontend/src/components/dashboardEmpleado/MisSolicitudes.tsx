@@ -61,6 +61,12 @@ export const MisSolicitudes = ({ solicitudes, cargando, error }: { solicitudes: 
                     <div key={s.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors border border-gray-100">
                         <div>
                         <p className="text-sm text-gray-900 font-medium">{formatearDiasComoRangos(s.dias)}</p>
+                        {s.estatus !== 'revocada' && s.diasRevocados.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                                <span className="text-red-600 font-medium">{s.diasRevocados.length} día{s.diasRevocados.length !== 1 ? 's' : ''} revocado{s.diasRevocados.length !== 1 ? 's' : ''}</span>
+                                {' '}por tu jefe: {formatearDiasComoRangos(s.diasRevocados)}
+                            </p>
+                        )}
                         {s.backupNombre && (
                             <div className="text-xs text-gray-500 mt-1">
                             <span className="flex items-center gap-1">

@@ -6,6 +6,7 @@ export interface SolicitudResumen {
     id: string;
     estatus: EstatusSolicitud;
     dias: string[];
+    diasRevocados: string[];
     backupNombre: string | null;
 }
 
