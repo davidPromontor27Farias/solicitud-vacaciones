@@ -4,6 +4,7 @@ import { RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useSolicitudesPorEstatus } from '../../hooks/useSolicitudesPorEstatus';
 import { ESTATUS_TABS } from './constantes';
 import { GLASS } from './estilos';
+import { formatearDiasComoRangos } from '../../utils/fechas';
 
 const formatearFecha = (iso: string | null): string => {
     if (!iso) return '—';
@@ -65,6 +66,9 @@ export const SeccionSolicitudes = () => {
                                     <th className="text-left px-5 py-3">Solicitada</th>
                                     <th className="text-left px-5 py-3">Resuelta</th>
                                     {estatus === 'rechazada' && <th className="text-left px-5 py-3">Motivo</th>}
+                                    {(estatus === 'aprobada' || estatus === 'revocada') && (
+                                        <th className="text-left px-5 py-3">Días revocados</th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/10">
@@ -80,6 +84,11 @@ export const SeccionSolicitudes = () => {
                                         <td className="px-5 py-3 text-white/70">{formatearFecha(s.resueltoAt)}</td>
                                         {estatus === 'rechazada' && (
                                             <td className="px-5 py-3 text-white/70">{s.motivoRechazo ?? '—'}</td>
+                                        )}
+                                        {(estatus === 'aprobada' || estatus === 'revocada') && (
+                                            <td className="px-5 py-3 text-white/70">
+                                                {s.diasRevocados.length > 0 ? formatearDiasComoRangos(s.diasRevocados) : '—'}
+                                            </td>
                                         )}
                                     </tr>
                                 ))}

@@ -9,6 +9,7 @@ export interface SolicitudPorEstatusResultado {
     nombre: string;
     departamento: string | null;
     dias: Date[];
+    diasRevocados: Date[];
     cantidadDias: number;
     backupNombre: string | null;
     motivoRechazo: string | null;
@@ -42,6 +43,7 @@ export class ListarSolicitudesPorEstatus {
                 nombre: empleado?.nombre ?? 'Empleado no encontrado',
                 departamento: empleado?.departamento ?? null,
                 dias: solicitud.dias,
+                diasRevocados: solicitud.diasRevocados,
                 cantidadDias: solicitud.cantidadDias,
                 backupNombre: solicitud.backupNombre,
                 motivoRechazo: solicitud.motivoRechazo,

@@ -132,6 +132,7 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminDeps): void
             Departamento: s.departamento ?? '',
             'Días solicitados': s.cantidadDias,
             'Primer día': s.dias[0]?.toISOString().slice(0, 10) ?? '',
+            'Días revocados': s.diasRevocados.map((d) => d.toISOString().slice(0, 10)).join(', '),
             Backup: s.backupNombre ?? '',
             'Motivo de rechazo': s.motivoRechazo ?? '',
             'Fecha de solicitud': s.createdAt.toISOString().slice(0, 10),

@@ -124,6 +124,7 @@ export interface SolicitudPorEstatus {
     nombre: string;
     departamento: string | null;
     dias: string[];
+    diasRevocados: string[];
     cantidadDias: number;
     backupNombre: string | null;
     motivoRechazo: string | null;
