@@ -53,9 +53,9 @@ export const PerfilHeader = ({ perfil, cargando, error }: { perfil: PerfilEmplea
                 </div>
                 <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 opacity-80" />
-                <div>
+                <div className='min-w-0'>
                     <p className="text-xs opacity-80">Correo</p>
-                    <p className="text-sm font-medium truncate">{perfil.correoPersonal || '—'}</p>
+                    <p className="text-sm font-medium break-all sm:break-normal">{perfil.correoPersonal || '—'}</p>
                 </div>
                 </div>
             </div>

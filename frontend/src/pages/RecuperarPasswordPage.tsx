@@ -133,13 +133,7 @@ export function RecuperarPasswordPage() {
                         >
                             Guardar contraseña
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setPaso('numero')}
-                            className="w-full text-sm text-gray-600 hover:text-gray-800"
-                        >
-                            Cambiar número de empleado
-                        </button>
+
                     </form>
                 )}
             </div>

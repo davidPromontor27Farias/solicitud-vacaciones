@@ -127,13 +127,7 @@ export function LoginPage() {
                         >
                             Iniciar sesión
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setPaso('numero')}
-                            className="w-full text-sm text-gray-500 hover:text-gray-700"
-                        >
-                            Cambiar número de empleado
-                        </button>
+
                         <Link
                             to={`/recuperar?numeroEmpleado=${encodeURIComponent(numeroEmpleado)}`}
                             className="block text-center text-sm text-gray-500 hover:text-gray-700"
