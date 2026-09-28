@@ -23,8 +23,8 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
 
-      <div className="w-full md:w-fit p-1">
-        <div className="flex items-center gap-1 bg-white/80 backdrop-blur-md p-1.5 rounded-2xl shadow-xl border border-gray-100 w-full md:w-auto">
+      <div className="w-full md:w-fit overflow-x-auto no-scrollbar p-1">
+        <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-md p-1.5 rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 min-w-max md:min-w-0 ">
           {TABS.map((tab) => {
             const isActive = tabActivo === tab.id;
 
@@ -33,7 +33,7 @@ export function DashboardPage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setTabActivo(tab.id)}
-                className={`flex-1 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 ease-out active:scale-95 select-none text-center ${
+                className={`flex-1 md:flex-initial px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 ease-out active:scale-95 select-none whitespace-nowrap ${
                   isActive
                     ? 'bg-linear-to-r from-[#4a8b2c] to-[#ee7624] text-white shadow-lg shadow-[#4a8b2c]/25 scale-[1.02]'
                     : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/60'
@@ -41,7 +41,7 @@ export function DashboardPage() {
               >
                 {tab.label}
               </button>
-            );
+            )
           })}
         </div>
       </div>

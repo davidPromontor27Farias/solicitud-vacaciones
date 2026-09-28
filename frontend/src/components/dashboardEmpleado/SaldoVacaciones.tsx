@@ -107,7 +107,7 @@ export const SaldoVacaciones = ({ perfil }: { perfil: PerfilEmpleado | null }) =
                 </div>
 
                 {/**VISTA DESKTOP: TABLE COMPLETA  (VISIBLE SOLO EN >= md)*/}
-                <div className="hidden overflow-x-auto rounded-xl border border-gray-200">
+                <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200">
                     <table className="w-full text-sm">
                         <thead>
                         <tr className="bg-linear-to-r from-[#4a8b2c] to-[#ee7624] divide-x divide-white/20">
