@@ -1,8 +1,8 @@
 import { GLASS } from '../../utils/estilos';
 import { construirFilaEquipo, formatearFecha, type EmpleadoConPeriodos, type FiltroSemaforo } from './utils';
 
-const TH = 'text-center px-1.5 py-2.5 font-semibold text-white/90 uppercase tracking-wide text-[11px] leading-tight whitespace-nowrap';
-const TD = 'px-1.5 py-2.5 text-center align-middle align-midle whitespace-nowarp text-xs sm:text-sm';
+const TH = 'text-center align-middle px-1.5 py-2.5 font-semibold text-white/90 uppercase tracking-wide text-[11px] leading-tight whitespace-nowrap';
+const TD = 'px-1.5 py-2.5 text-center align-middle whitespace-nowrap text-xs sm:text-sm';
 
 export const TablaEquipo = ({ 
         empleados, 
@@ -65,7 +65,7 @@ export const TablaEquipo = ({
                     <table className="w-max min-w-full text-sm divide-y divide-white/10">
                         <thead>
                             <tr className="bg-gradient-to-r from-[#4a8b2c]/30 to-[#ee7624]/20 border-b border-white/20">
-                                <th className={`w-40 text-left px-2 py-2.5 font-semibold text-white/90 uppercase tracking-wide text-[11px] leading-tight`}>Empleado</th>
+                                <th className={`w-40 text-left align-middle px-2 py-2.5 font-semibold text-white/90 uppercase tracking-wide text-[11px] leading-tight`}>Empleado</th>
                               
                                 {mostrarBasicas && (
                                     <>
@@ -100,7 +100,7 @@ export const TablaEquipo = ({
                         <tbody className="divide-y divide-white/10">
                             {filas.map((fila, indice) => (
                                 <tr key={fila.empleadoId} className={indice % 2 === 1 ? 'bg-white/5' : ''}>
-                                    <td className="px-2 py-2.5">
+                                    <td className="px-2 py-2.5 align-middle">
                                         <p className="text-white font-medium text-[13px] leading-tight break-words">{fila.nombre}</p>
                                     </td>
                                     
@@ -135,7 +135,6 @@ export const TablaEquipo = ({
                                             </td>
                                         </>
                                     )}
-
 
                                     {mostrarVencidos && (
                                         <>
