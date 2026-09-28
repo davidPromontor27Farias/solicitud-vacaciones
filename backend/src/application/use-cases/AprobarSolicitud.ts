@@ -54,6 +54,10 @@ export class AprobarSolicitud {
                 throw new NotFoundError('Solicitud no encontrada');
             }
 
+            if (solicitud.estaVencida()) {
+                throw new ValidationError('Esta solicitud ya venció: el primer día solicitado ya pasó sin haber sido aprobada. Pide al empleado que envíe una nueva solicitud.');
+            }
+
             const opcionesBackup = dividirNombres(solicitud.backupNombre ?? '');
             if (opcionesBackup.length > 1) {
                 if (!input.backupSeleccionado?.trim()) {

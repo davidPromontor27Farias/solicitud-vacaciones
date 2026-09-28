@@ -117,6 +117,7 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
             estatus: s.estatus,
             dias: s.dias.map((d) => d.toISOString().slice(0, 10)),
             diasRevocados: s.diasRevocados.map((d) => d.toISOString().slice(0, 10)),
+            vencida: s.estaVencida(),
             backupNombre: s.backupNombre,
         })),
         total: resultado.total,

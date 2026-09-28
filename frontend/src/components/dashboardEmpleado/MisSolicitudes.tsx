@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, Clock, FileText, History, RefreshCw, Users, XCircle, Calendar } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle, Clock, FileText, History, RefreshCw, Users, XCircle, Calendar } from 'lucide-react';
 import { formatearDiasComoRangos } from '../../utils/fechas';
 import { dividirNombres } from '../../utils/texto';
 import type { SolicitudResumen } from '../../api/solicitudes';
@@ -23,6 +23,11 @@ const ESTATUS_ESTILOS: Record<string, { bg: string; text: string; icon: React.Re
     bg: 'bg-slate-100 border-slate-200',
     text: 'text-slate-700',
     icon: <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+  },
+  vencida: {
+    bg: 'bg-orange-50 border-orange-200/80',
+    text: 'text-orange-700',
+    icon: <AlertTriangle className="w-3.5 h-3.5 text-orange-600" />
   },
 };
 
@@ -72,7 +77,9 @@ export const MisSolicitudes = ({
         /* Lista de Solicitudes */
         <div className="space-y-3">
           {solicitudes.map((s) => {
-            const estatusInfo = ESTATUS_ESTILOS[s.estatus] || ESTATUS_ESTILOS.pendiente;
+            const vencida = s.estatus === 'pendiente' && s.vencida;
+            const etiquetaEstatus = vencida ? 'vencida' : s.estatus;
+            const estatusInfo = ESTATUS_ESTILOS[etiquetaEstatus] || ESTATUS_ESTILOS.pendiente;
             const backups = s.backupNombre ? dividirNombres(s.backupNombre) : [];
 
             return (
@@ -93,9 +100,16 @@ export const MisSolicitudes = ({
                     {/* Badge visible solo arriba en móvil para ahorrar espacio vertical */}
                     <div className={`sm:hidden flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-xs font-semibold capitalize shrink-0 ${estatusInfo.bg} ${estatusInfo.text}`}>
                       {estatusInfo.icon}
-                      <span>{s.estatus}</span>
+                      <span>{etiquetaEstatus}</span>
                     </div>
                   </div>
+
+                  {/* Bloque de aviso de solicitud vencida (si aplica) */}
+                  {vencida && (
+                    <div className="bg-orange-50/70 border border-orange-100 p-2 rounded-lg text-xs text-orange-700 font-medium">
+                      Tu jefe no respondió antes de que llegara la fecha. Esta solicitud ya venció — envía una nueva.
+                    </div>
+                  )}
 
                   {/* Bloque de días revocados (si aplica) */}
                   {s.estatus !== 'revocada' && s.diasRevocados.length > 0 && (
@@ -134,7 +148,7 @@ export const MisSolicitudes = ({
                 {/* Badge visible en pantallas medianas y superiores */}
                 <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-medium capitalize shrink-0 self-start sm:self-center ${estatusInfo.bg} ${estatusInfo.text}`}>
                   {estatusInfo.icon}
-                  <span>{s.estatus}</span>
+                  <span>{etiquetaEstatus}</span>
                 </div>
               </div>
             );

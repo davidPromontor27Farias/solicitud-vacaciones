@@ -94,7 +94,14 @@ export function RevisarSolicitudPage() {
                             </div>
                         )}
 
-                        {detalle.estatus === 'pendiente' && detalle.esJefeDirecto && (
+                        {detalle.estatus === 'pendiente' && detalle.vencida && (
+                            <div className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm text-orange-700">
+                                <p className="font-medium">Esta solicitud ya venció.</p>
+                                <p className="text-xs mt-0.5">El primer día solicitado ya pasó sin que se haya resuelto, así que ya no se puede aprobar ni rechazar. Pide al empleado que envíe una nueva solicitud.</p>
+                            </div>
+                        )}
+
+                        {detalle.estatus === 'pendiente' && !detalle.vencida && detalle.esJefeDirecto && (
                             <AccionesAprobacion
                                 mostrandoAprobar={mostrandoAprobar}
                                 setMostrandoAprobar={setMostrandoAprobar}

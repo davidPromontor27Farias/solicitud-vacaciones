@@ -12,6 +12,7 @@ export interface DetalleRevision {
     diasEquipoPendientes: Record<string, string[]>;
     esJefeDirecto: boolean;
     esJefeMatricial: boolean;
+    vencida: boolean;
 }
 
 export function obtenerDetalleRevision(token: string): Promise<DetalleRevision> {

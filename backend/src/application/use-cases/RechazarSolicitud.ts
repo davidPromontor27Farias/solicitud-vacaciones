@@ -32,6 +32,10 @@ export class RechazarSolicitud {
             throw new UnauthorizedError('No tienes permiso para rechazar esta solicitud');
         }
 
+        if (solicitud.estaVencida()) {
+            throw new ValidationError('Esta solicitud ya venció: el primer día solicitado ya pasó sin haber sido resuelta. Pide al empleado que envíe una nueva solicitud.');
+        }
+
         try {
             solicitud.rechazar(input.motivo);
         } catch (error) {

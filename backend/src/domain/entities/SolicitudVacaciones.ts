@@ -40,6 +40,19 @@ export class SolicitudVacaciones {
     get motivoRevocacion() {return this.props.motivoRevocacion ?? null}
     get createdAt() {return this.props.createdAt;}
     get motivoRechazo() {return this.props.motivoRechazo ?? null}
+    get primerDia() {
+        return this.props.dias.reduce((min, d) => (d < min ? d : min), this.props.dias[0]);
+    }
+
+    // Una solicitud pendiente "vence" en cuanto arranca su primer dia sin que el jefe la haya
+    // resuelto: ya no tiene sentido aprobarla con anticipacion, y el empleado debe mandar una
+    // solicitud nueva. No cambia el estatus en la base de datos (sigue "pendiente"), es un
+    // estado derivado que se recalcula cada vez segun la fecha actual.
+    estaVencida(fechaReferencia: Date = new Date()): boolean {
+        if (this.props.estatus !== 'pendiente') return false;
+        const hoyUtc = new Date(Date.UTC(fechaReferencia.getUTCFullYear(), fechaReferencia.getUTCMonth(), fechaReferencia.getUTCDate()));
+        return this.primerDia <= hoyUtc;
+    }
 
     aprobar(): void {
         if(this.props.estatus !== 'pendiente'){

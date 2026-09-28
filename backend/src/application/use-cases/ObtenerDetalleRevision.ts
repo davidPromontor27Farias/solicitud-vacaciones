@@ -18,6 +18,7 @@ export interface DetalleRevisionResultado {
     diasEquipoPendientes: Record<string, string[]>;
     esJefeDirecto: boolean;
     esJefeMatricial: boolean;
+    vencida: boolean;
 }
 
 export class ObtenerDetalleRevision {
@@ -94,7 +95,8 @@ export class ObtenerDetalleRevision {
             diasEquipoAprobados,
             diasEquipoPendientes,
             esJefeDirecto,
-            esJefeMatricial
+            esJefeMatricial,
+            vencida: solicitud.estaVencida(),
         };
     }
 }
