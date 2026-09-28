@@ -1,8 +1,10 @@
 import { GLASS } from '../../utils/estilos';
 import { construirFilaEquipo, formatearFecha, type EmpleadoConPeriodos, type FiltroSemaforo } from './utils';
 
-const TH = 'text-center align-middle px-1.5 py-2.5 font-semibold text-white/90 uppercase tracking-wide text-[11px] leading-tight whitespace-nowrap';
-const TD = 'px-1.5 py-2.5 text-center align-middle whitespace-nowrap text-xs sm:text-sm';
+// En móviles y tablets (< lg) mantiene whitespace-nowrap para un scroll horizontal limpio.
+// En laptops y escritorios (>= lg) permite salto de línea para ajustar todo al 100% de la pantalla.
+const TH = 'text-center align-middle px-1.5 lg:px-2 py-2.5 font-semibold text-white/90 uppercase tracking-wide text-[11px] leading-tight whitespace-nowrap lg:whitespace-normal';
+const TD = 'px-1.5 lg:px-2 py-2.5 text-center align-middle whitespace-nowrap lg:whitespace-normal text-xs sm:text-sm';
 
 export const TablaEquipo = ({ 
         empleados, 
@@ -23,7 +25,6 @@ export const TablaEquipo = ({
     const mostrarVencidos = filtro === 'todos' || filtro === 'vencido';
 
     return (
-
         <div className='space-y-3'>
             {SEMAFORO.length > 0 && (
                 <div className={`w-full ${GLASS} p-1.5 rounded-2xl border border-white/10 shadow-lg`}>
@@ -59,13 +60,14 @@ export const TablaEquipo = ({
                     </div>
                 </div>
             )}
-            {/**Contenedor de la tabla con SCROLL y columna fija */}
-            <div className={`${GLASS} rounded-2xl overflow-hidden border border-white/10 shadow-xl`}>
-                <div className='w-full overflow-x-auto touch-pan-x overscroll-x-contain no-scrollbar'>
-                    <table className="w-max min-w-full text-sm divide-y divide-white/10">
+            
+            {/* Contenedor: Scroll horizontal en teléfonos y tablets (< lg), 100% completo en escritorios (>= lg) */}
+            <div className={`${GLASS} rounded-2xl overflow-hidden border border-white/10 shadow-xl w-full`}>
+                <div className='w-full overflow-x-auto lg:overflow-x-visible touch-pan-x overscroll-x-contain no-scrollbar'>
+                    <table className="w-max lg:w-full text-sm divide-y divide-white/10">
                         <thead>
                             <tr className="bg-gradient-to-r from-[#4a8b2c]/30 to-[#ee7624]/20 border-b border-white/20">
-                                <th className={`w-40 text-left align-middle px-2 py-2.5 font-semibold text-white/90 uppercase tracking-wide text-[11px] leading-tight`}>Empleado</th>
+                                <th className="text-left align-middle px-2 py-2.5 font-semibold text-white/90 uppercase tracking-wide text-[11px] leading-tight min-w-[140px] lg:min-w-0">Empleado</th>
                               
                                 {mostrarBasicas && (
                                     <>
@@ -109,7 +111,6 @@ export const TablaEquipo = ({
                                             <td className={`${TD} text-white/90 font-semibold`}>{fila.total}</td>
                                             <td className={`${TD} text-white/90 font-semibold`}>{fila.tomados}</td>
                                         </>
-                                    
                                     )}
                                     
                                     {mostrarDisponibles && (
@@ -155,8 +156,6 @@ export const TablaEquipo = ({
                     </table>
                 </div>
             </div>
-                    
-
         </div>
     );
 };
