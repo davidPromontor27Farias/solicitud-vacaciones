@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import {
     obtenerEquipo,
     obtenerVacacionesEquipo,
+    obtenerAusentismosEquipo,
     type EmpleadoEquipo,
     type VacacionAprobadaEquipo,
+    type AusentismoAprobadoEquipo,
 } from '../api/jefe';
 import { ApiError } from '../api/client';
 import { calcularCriticos, hoyISO, obtenerMatrizMes } from '../components/calendarioJefe/utils';
@@ -11,6 +13,7 @@ import { calcularCriticos, hoyISO, obtenerMatrizMes } from '../components/calend
 export const useJefeCalendarioPage = () => {
     const [equipo, setEquipo] = useState<EmpleadoEquipo[]>([]);
     const [vacaciones, setVacaciones] = useState<VacacionAprobadaEquipo[]>([]);
+    const [ausentismos, setAusentismos] = useState<AusentismoAprobadoEquipo[]>([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [vacacionSeleccionada, setVacacionSeleccionada] = useState<VacacionAprobadaEquipo | null>(null);
@@ -22,10 +25,11 @@ export const useJefeCalendarioPage = () => {
     const cargarDatos = () => {
         setCargando(true);
         setError(null);
-        return Promise.all([obtenerEquipo(), obtenerVacacionesEquipo()])
-            .then(([equipoRes, vacacionesRes]) => {
+        return Promise.all([obtenerEquipo(), obtenerVacacionesEquipo(), obtenerAusentismosEquipo()])
+            .then(([equipoRes, vacacionesRes, ausentismosRes]) => {
                 setEquipo(equipoRes);
                 setVacaciones(vacacionesRes);
+                setAusentismos(ausentismosRes);
             })
             .catch((err) => setError(err instanceof ApiError ? err.message : 'Error inesperado'))
             .finally(() => setCargando(false));
@@ -64,6 +68,18 @@ export const useJefeCalendarioPage = () => {
         return mapa;
     }, [vacaciones]);
 
+    const ausentismosPorDia = useMemo(() => {
+        const mapa = new Map<string, AusentismoAprobadoEquipo[]>();
+        for (const a of ausentismos) {
+            for (const dia of a.dias) {
+                const lista = mapa.get(dia) ?? [];
+                lista.push(a);
+                mapa.set(dia, lista);
+            }
+        }
+        return mapa;
+    }, [ausentismos]);
+
     const semanas = useMemo(() => obtenerMatrizMes(anio, mes), [anio, mes]);
     const nombreMes = new Date(Date.UTC(anio, mes, 1)).toLocaleDateString('es-MX', { month: 'long', year: 'numeric', timeZone: 'UTC' });
     const hoy = hoyISO();
@@ -83,7 +99,7 @@ export const useJefeCalendarioPage = () => {
         cargando, error,
         vacacionSeleccionada, setVacacionSeleccionada,
         mes, semanas, nombreMes, hoy,
-        nombrePorEmpleadoId, estadoCriticoPorEmpleadoId, vacacionesPorDia,
+        nombrePorEmpleadoId, estadoCriticoPorEmpleadoId, vacacionesPorDia, ausentismosPorDia,
         cambiarMes, irAHoy, cargarDatos,
     };
 };

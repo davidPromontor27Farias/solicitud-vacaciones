@@ -7,6 +7,18 @@ export interface AdjuntoCorreo {
     contentType: string;
 }
 
+const ETIQUETAS_MOTIVO_AUSENTISMO: Record<string, string> = {
+    permiso_sin_goce: 'Permiso sin goce de sueldo',
+    permiso_con_goce: 'Permiso con goce de sueldo',
+    home_office: 'Home office',
+    tiempo_por_tiempo: 'Tiempo por tiempo',
+    permiso_interno_salud: 'Permiso interno (por salud laboral)',
+    permiso_salida: 'Permiso de salida',
+    permiso_entrada: 'Permiso de entrada'
+}
+
+
+
 const ADJUNTOS_LOGO: AdjuntoCorreo[] = [{
     filename: 'logo.png',
     content: Buffer.from(LOGO_BASE64, 'base64'),
@@ -210,6 +222,82 @@ function construirContenido(tipo: string, datos: Record<string, string>): Omit<C
                 `)
             }
         }
+
+        case 'ausentismo_creado': {
+            const empleado = datos.empleado ?? '';
+            const motivo = ETIQUETAS_MOTIVO_AUSENTISMO[datos.motivo ?? ''] ?? datos.motivo ?? '';
+            const comentario = datos.comentario ?? '';
+            const dias = datos.dias ?? '';
+            const primerDia = datos.primerDia ?? '';
+            return {
+                subject: 'Nueva solicitud de ausentismo para tu aprobacion',
+                text: `${empleado} solicitó un ausentismo ${motivo} de ${dias} día(s) a partir del ${primerDia}. Comentario: ${comentario}`,
+                html: envolverPlantilla(`
+                    <p style="margin:0 0 16px;">Tienes una nueva solicitud de ausentismo pendiente de revisión:</p>
+                    ${tabla(
+                        filaTabla('Empleado', escaparHtml(empleado)) +
+                        filaTabla('Motivo', escaparHtml(motivo)) +
+                        filaTabla('Días', dias) +
+                        filaTabla('A partir de', primerDia) +
+                        filaTabla('Comentario', escaparHtml(comentario))
+                    )}
+                    <p style="margin:0;">
+                        <a href="${process.env.APP_URL ?? ''}/revisar-ausentismo/${datos.enlaceToken ?? ''}" style="display:inline-block;background-color:#4a8b2c;color:#ffffff;text-decoration:none;padding:10px 22px;border-radius:6px;font-weight:600;">Revisar ausentismo</a>
+                    </p>
+                `),
+            };
+        }
+
+        case 'ausentismo_aprobado_empleado': {
+            const motivo = ETIQUETAS_MOTIVO_AUSENTISMO[datos.motivo ?? ''] ?? datos.motivo ?? '';
+            const dias = datos.dias ?? '';
+            return {
+                subject: 'Tu ausentismo fue aprobado',
+                text: `Tu ausentismo ${motivo} de ${dias} días(s) fue aprobado.`,
+                html: envolverPlantilla(`
+                    <p style="margin: 0 0 16px;">Tu solicitud de ausentismo fue <strong style="color:#059669">aprobada</strong>.</p>
+                    ${tabla(filaTabla('Motivo', escaparHtml(motivo)) + filaTabla('Días', dias))}
+                `),
+            }
+
+        }
+
+        case 'ausentismo_rechazado_empleado': {
+            const motivo = ETIQUETAS_MOTIVO_AUSENTISMO[datos.motivo ?? ''] ?? datos.motivo ?? '';
+            const dias = datos.dias ?? '';
+            const motivoRechazo = datos.motivoRechazo ?? '';
+            return {
+                subject: 'Tu ausentismo fue rechazado',
+                text: `Tu ausentismo (${motivo}) de ${dias} día(s) fue rechazado. Motivo: ${motivoRechazo}`,
+                html: envolverPlantilla(`
+                    <p style="margin:0 0 16px;">Tu solicitud de ausentismo fue <strong style="color:#dc2626;">rechazada</strong>.</p>
+                    ${tabla(filaTabla('Motivo', escaparHtml(motivo)) + filaTabla('Días', dias) + filaTabla('Motivo del rechazo', escaparHtml(motivoRechazo)))}
+                `),
+            };
+        }
+
+        case 'ausentismo_aprobado_nominas':
+        case 'ausentismo_rechazado_nominas': {
+            const aprobado = tipo === 'ausentismo_aprobado_nominas';
+            const empleado = datos.empledo ?? '';
+            const motivo = ETIQUETAS_MOTIVO_AUSENTISMO[datos.motivo ?? ''] ?? datos.motivo;
+            const dias = datos.dias ?? '';
+            return {
+                subject: `Ausentismo ${aprobado ? 'aprobado' : 'rechazado'}: ${empleado}`,
+                text: `El ausentismo de ${empleado} (${motivo}, ${dias} día(s)) fue ${aprobado ? 'aprobado' : 'rechazado'}.`,
+                html: envolverPlantilla(`
+                    <p style="margin:0 0 16px;">Copia informativa para nóminas:</p>
+                    ${tabla(
+                        filaTabla('Empleado', escaparHtml(empleado)) +
+                        filaTabla('Motivo', escaparHtml(motivo)) +
+                        filaTabla('Días', dias) +
+                        filaTabla('Resultado', aprobado ? 'Aprobado' : 'Rechazado')
+                    )}
+                `),
+            };
+        }
+
+
 
         default: {
             return {

@@ -14,6 +14,7 @@ import { LoginPage } from './pages/LoginPage';
 import { ActivarCuentaPage } from './pages/ActivarCuentaPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { RevisarSolicitudPage } from './pages/RevisarSolicitudPage';
+import { RevisarAusentismoPage } from './pages/RevisarAusentismoPage';
 import { RecuperarPasswordPage } from './pages/RecuperarPasswordPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminNominasPage } from './pages/AdminNominasPage';
@@ -33,6 +34,7 @@ export default function App() {
                         <Route path="/activar" element={<ActivarCuentaPage />} />
                         <Route path="/recuperar" element={<RecuperarPasswordPage />} />
                         <Route path="/revisar/:token" element={<RevisarSolicitudPage />} />
+                        <Route path="/revisar-ausentismo/:token" element={<RevisarAusentismoPage />} />
                         <Route element={<RutaProtegida />}>
                             <Route element={<Layout />}>
                                 <Route path="/" element={<DashboardPage />} />
@@ -46,6 +48,7 @@ export default function App() {
                                 <Route path="/admin/historial-cargas" element={<AdminNominasPage />} />
                                 <Route path="/admin/nomina-solicitudes" element={<AdminNominasPage />} />
                                 <Route path="/admin/nomina-reportes" element={<AdminNominasPage />} />
+                                <Route path="/admin/nomina-ausentismos" element={<AdminNominasPage />} />
                             </Route>
                         </Route>
                         <Route element={<RutaProtegidaJefe />}>

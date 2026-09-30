@@ -14,6 +14,28 @@ enum EstatusSolicitud {
   rechazada
 }
 
+enum EstatusEnvio {
+  pendiente
+  enviado
+  fallido
+}
+
+enum EstatusAusentismo {
+  pendiente
+  aprobado 
+  rechazado
+}
+
+enum MotivoAusentismo {
+  permiso_sin_goce
+  permiso_con_goce
+  home_office
+  tiempo_por_tiempo
+  permiso_interno_salud
+  permiso_salida
+  permiso_entrada
+}
+
 enum TipoNotificacion {
   activacion_cuenta
   restablecer_password
@@ -23,13 +45,19 @@ enum TipoNotificacion {
   aprobacion_nomina
   aprobacion_jefe_matricial
   revocacion
+  ausentismo_creado
+  ausentismo_aprobado_empleado
+  ausentismo_rechazado_empleado
+  ausentismo_aprobado_nominas
+  ausentismo_rechazado_nominas
 }
 
-enum EstatusEnvio {
-  pendiente
-  enviado
-  fallido
-}
+
+
+
+
+
+
 
 model Empleado {
   id                            String    @id @default(uuid())
@@ -60,6 +88,7 @@ model Empleado {
 
   saldosVacaciones     SaldoVacaciones[]
   solicitudes          SolicitudVacaciones[] @relation("SolicitudesEmpleado")
+  ausentismos          Ausentismo[]
   solicitudesRevocadas SolicitudVacaciones[] @relation("RevocadoPor")
   tokensActivacion     TokenActivacion[]
 
@@ -154,8 +183,12 @@ model NotificacionEmail {
   createdAt DateTime  @default(now()) @map("created_at")
   enviadoAt DateTime? @map("enviado_at")
 
+  ausentismoId String?     @map("ausentismo_id")
+  ausentismo   Ausentismo? @relation(fields: [ausentismoId], references: [id]) 
+
   @@index([solicitudId])
   @@map("notificaciones_email")
+  @@index([ausentismoId])
 }
 
 model Admin {
@@ -201,4 +234,35 @@ model ImportacionCorreosJefes {
   createdAt     DateTime @default(now()) @map("created_at")
 
   @@map("importaciones_correos_jefes")
+}
+
+model Ausentismo {
+  id            String            @id @default(uuid())
+  empleadoId    String            @map("empleado_id")
+  empleado      Empleado          @relation(fields: [empleadoId], references: [id])
+  motivo        MotivoAusentismo
+  comentario    String
+  estatus       EstatusAusentismo @default(pendiente)
+  motivoRechazo String?           @map("motivo_rechazo")
+
+  dias           DiaAusentismo[]
+  notificaciones NotificacionEmail[]
+
+  createdAt  DateTime  @default(now()) @map("created_at")
+  resueltoAt DateTime? @map("resuelto_at")
+
+  @@index([empleadoId])
+  @@index([estatus])
+  @@map("ausentismos")
+}
+
+model DiaAusentismo {
+  id           String     @id @default(uuid())
+  ausentismoId String     @map("ausentismo_id")
+  ausentismo   Ausentismo @relation(fields: [ausentismoId], references: [id], onDelete: Cascade)
+  fecha        DateTime   @db.Date
+
+  @@unique([ausentismoId, fecha])
+  @@index([fecha])
+  @@map("dias_ausentismo")
 }

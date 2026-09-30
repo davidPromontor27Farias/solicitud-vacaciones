@@ -3,11 +3,14 @@ import { PerfilHeader } from '../components/dashboardEmpleado/PerfilHeader';
 import { SaldoVacaciones } from '../components/dashboardEmpleado/SaldoVacaciones';
 import { NuevaSolicitud } from '../components/dashboardEmpleado/NuevaSolicitud';
 import { MisSolicitudes } from '../components/dashboardEmpleado/MisSolicitudes';
+import { Ausentismos } from '../components/dashboardEmpleado/Ausentismos';
+
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'informacion', label: 'Información' },
   { id: 'nueva', label: 'Nueva solicitud' },
   { id: 'mis', label: 'Mis solicitudes' },
+  {id: 'ausentismos', label: 'Permisos de Ausentismos'}
 ];
 
 export function DashboardPage() {
@@ -24,7 +27,7 @@ export function DashboardPage() {
     <div className="space-y-6">
 
       <div className="w-full md:w-fit overflow-x-auto no-scrollbar p-1">
-        <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-md p-1.5 rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 min-w-max md:min-w-0 ">
+        <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-md p-1.5 rounded-2xl shadow-xl  border border-gray-100 min-w-max md:min-w-0 ">
           {TABS.map((tab) => {
             const isActive = tabActivo === tab.id;
 
@@ -72,6 +75,14 @@ export function DashboardPage() {
       {tabActivo === 'mis' && (
         <MisSolicitudes solicitudes={solicitudes} cargando={cargandoLista} error={errorLista} />
       )}
+
+      {
+        tabActivo === 'ausentismos' && (
+          <Ausentismos/>
+        )
+      }
+
+
     </div>
   );
 }

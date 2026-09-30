@@ -26,6 +26,11 @@ import { PrismaImportacionCorreosJefesRepository } from '../../infraestructure/d
 import { registerAdminRoutes } from './routes/admin.routes';
 import { registerJefeRoutes } from './routes/jefe.routes';
 import { PrismaTransactionManager } from '../../infraestructure/database/PrismaTransactionManager';
+import { PrismaAusentismoRepository } from '../../infraestructure/database/repositories/PrismaAusentismoRepository';
+import { JwtEnlaceAusentismoGenerator } from '../../infraestructure/auth/JwtEnlaceAusentismoGenerator';
+import { registerAusentismosRoutes } from './routes/ausentismos.routes';
+import { registerRevisionAusentismoRoutes } from './routes/revisionAusentismo.routes';
+
 
 export function buildApp(prisma: PrismaClient): FastifyInstance {
     const app = Fastify({ logger: false, maxParamLength: 1000, trustProxy: true });
@@ -89,14 +94,18 @@ export function buildApp(prisma: PrismaClient): FastifyInstance {
     const emailNotifier = new DirectEmailNotifier(prisma);
     const enlaceGenerator = new JwtEnlaceRevisionGenerator(process.env.JWT_SECRET!);
     const txManager = new PrismaTransactionManager(prisma);
+    const ausentismoRepo = new PrismaAusentismoRepository(prisma);
+    const enlaceAusentismoGenerator = new JwtEnlaceAusentismoGenerator(process.env.JWT_SECRET!);
 
     app.register(async (api) => {
         registerAuthRoutes(api, { empleadoRepo, tokenRepo, passwordHasher, idGenerator, emailNotifier });
         registerSolicitudesRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, idGenerator, enlaceGenerator, txManager });
         registerEmpleadosRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo });
         registerRevisionRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, emailNotifier, enlaceGenerator, txManager });
-        registerAdminRoutes(api, {adminRepo, empleadoRepo, saldoRepo, solicitudRepo, importacionNominaRepo, importacionCorreosRepo, passwordHasher, idGenerator})
-        registerJefeRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, enlaceGenerator, emailNotifier, txManager });
+        registerAdminRoutes(api, {adminRepo, empleadoRepo, saldoRepo, solicitudRepo, importacionNominaRepo, importacionCorreosRepo, ausentismoRepo, passwordHasher, idGenerator})
+        registerJefeRoutes(api, { empleadoRepo, saldoRepo, solicitudRepo, ausentismoRepo, enlaceGenerator, emailNotifier, txManager });
+        registerAusentismosRoutes(api, { empleadoRepo, ausentismoRepo, emailNotifier, idGenerator, enlaceAusentismoGenerator });
+        registerRevisionAusentismoRoutes(api, { empleadoRepo, ausentismoRepo, emailNotifier, enlaceAusentismoGenerator });
     }, { prefix: '/api' });
 
     return app;

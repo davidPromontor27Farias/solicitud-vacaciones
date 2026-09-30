@@ -1,14 +1,19 @@
 import { GLASS } from '../../utils/estilos';
 import { fechaISO, DIAS_SEMANA } from './utils';
-import type { VacacionAprobadaEquipo } from '../../api/jefe';
+import type { VacacionAprobadaEquipo, AusentismoAprobadoEquipo } from '../../api/jefe';
+import { MOTIVOS_AUSENTISMO } from '../../api/ausentismos';
+
+const etiquetaMotivo = (motivo: string): string =>
+    MOTIVOS_AUSENTISMO.find((m) => m.value === motivo)?.label ?? motivo;
 
 export const CalendarioGrid = ({
-    semanas, mes, hoy, vacacionesPorDia, estadoCriticoPorEmpleadoId, nombrePorEmpleadoId, onSeleccionarVacacion,
+    semanas, mes, hoy, vacacionesPorDia, ausentismosPorDia, estadoCriticoPorEmpleadoId, nombrePorEmpleadoId, onSeleccionarVacacion,
 }: {
     semanas: Date[][];
     mes: number;
     hoy: string;
     vacacionesPorDia: Map<string, VacacionAprobadaEquipo[]>;
+    ausentismosPorDia: Map<string, AusentismoAprobadoEquipo[]>;
     estadoCriticoPorEmpleadoId: Map<string, 'vencido' | 'critico'>;
     nombrePorEmpleadoId: Map<string, string>;
     onSeleccionarVacacion: (v: VacacionAprobadaEquipo) => void;
@@ -29,6 +34,7 @@ export const CalendarioGrid = ({
                         const esHoy = iso === hoy;
                         const esPasado = iso < hoy;
                         const items = vacacionesPorDia.get(iso) ?? [];
+                        const itemsAusentismo = ausentismosPorDia.get(iso) ?? [];
 
                         // Si algún empleado de vacaciones ese día es crítico (vencido o por
                         // vencer), el recuadro se resalta para que salte a la vista de inmediato.
@@ -49,7 +55,9 @@ export const CalendarioGrid = ({
                                             ? 'bg-orange-500/20 ring-2 ring-inset ring-orange-500/70'
                                             : items.length > 0
                                                 ? 'bg-emerald-500/10'
-                                                : ''
+                                                : itemsAusentismo.length > 0
+                                                    ? 'bg-indigo-500/10'
+                                                    : ''
                                 } ${esPasado ? 'opacity-50' : ''} ${!delMes ? 'opacity-30' : ''}`}
                             >
                                 <span className={`text-xs inline-flex items-center justify-center w-5 h-5 rounded-full ${esHoy ? 'bg-[#4a8b2c] text-white font-semibold' : 'text-white/70'}`}>
@@ -78,6 +86,18 @@ export const CalendarioGrid = ({
                                     })}
                                     {items.length > 3 && (
                                         <div className="text-[10px] text-white/50">+{items.length - 3} más</div>
+                                    )}
+                                    {itemsAusentismo.slice(0, 2).map((a) => (
+                                        <div
+                                            key={a.ausentismoId}
+                                            title={`Ausentismo: ${etiquetaMotivo(a.motivo)}`}
+                                            className="w-full text-left text-[10px] rounded px-1 py-0.5 truncate bg-indigo-500/30 text-indigo-100 font-medium border border-indigo-400/30"
+                                        >
+                                            {nombrePorEmpleadoId.get(a.empleadoId) ?? a.empleadoNombre}
+                                        </div>
+                                    ))}
+                                    {itemsAusentismo.length > 2 && (
+                                        <div className="text-[10px] text-white/50">+{itemsAusentismo.length - 2} más</div>
                                     )}
                                 </div>
                             </div>

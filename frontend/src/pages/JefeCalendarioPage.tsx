@@ -17,6 +17,7 @@ export function JefeCalendarioPage() {
     nombrePorEmpleadoId,
     estadoCriticoPorEmpleadoId,
     vacacionesPorDia,
+    ausentismosPorDia,
     cambiarMes,
     irAHoy,
     cargarDatos,
@@ -122,6 +123,7 @@ export function JefeCalendarioPage() {
           mes={mes}
           hoy={hoy}
           vacacionesPorDia={vacacionesPorDia}
+          ausentismosPorDia={ausentismosPorDia}
           estadoCriticoPorEmpleadoId={estadoCriticoPorEmpleadoId}
           nombrePorEmpleadoId={nombrePorEmpleadoId}
           onSeleccionarVacacion={setVacacionSeleccionada}

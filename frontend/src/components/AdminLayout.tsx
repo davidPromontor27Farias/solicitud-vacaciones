@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAdminAuth } from '../context/AdminAuthContext';
-import { LogOut, ChevronLeft, ChevronRight, List, Mail, FileSpreadsheet, FileClock, Download } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight, List, Mail, FileSpreadsheet, FileClock, Download, CalendarOff } from 'lucide-react';
 
 export function AdminLayout() {
     const { admin, cerrarSesion } = useAdminAuth();
@@ -89,6 +89,18 @@ export function AdminLayout() {
                             >
                                 <List className="w-4 h-4 shrink-0" />
                                 {!colapsado && 'Solicitudes'}
+                            </NavLink>
+                            <NavLink
+                                to="/admin/nomina-ausentismos"
+                                title="Ausentismos"
+                                className={({ isActive }) =>
+                                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                        isActive ? 'bg-[#4a8b2c]/10 text-[#4a8b2c]' : 'text-gray-600 hover:bg-gray-100'
+                                    }`
+                                }
+                            >
+                                <CalendarOff className="w-4 h-4 shrink-0" />
+                                {!colapsado && 'Ausentismos'}
                             </NavLink>
                             <NavLink
                                 to="/admin/nomina-reportes"

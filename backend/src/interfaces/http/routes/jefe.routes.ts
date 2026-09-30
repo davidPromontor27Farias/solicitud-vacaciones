@@ -7,10 +7,12 @@ import { ListarEquipoConVacaciones } from "../../../application/use-cases/Listar
 import { ListarTodosConVacaciones } from "../../../application/use-cases/ListarTodosConVacaciones";
 import { ObtenerArbolMatricial, NodoArbolMatricial } from "../../../application/use-cases/ObtenerArbolMatricial";
 import { ObtenerVacacionesAprobadasEquipo } from "../../../application/use-cases/ObtenerVacacionesAprobadasEquipo";
+import { ObtenerAusentismosAprobadosEquipo } from "../../../application/use-cases/ObtenerAusentismosAprobadosEquipo";
 import { ObtenerNotificacionesJefe } from "../../../application/use-cases/ObtenerNotificacionesJefe";
 import { RevocarSolicitud } from "../../../application/use-cases/RevocarSolicitud";
 import { EnlaceRevisionGenerator } from "../../../application/ports/EnlaceRevisionGenerator";
 import { EmailNotifier } from "../../../application/ports/EmailNotifier";
+import { AusentismoRepository } from "../../../domain/repositories/AusentismoRepository";
 import { authenticateJefe } from "../middlewares/authenticateJefe";
 import { jefeLoginSchema, revocarVacacionesJefeSchema } from "../schemas/jefe.schemas";
 import { TransactionManager } from "../../../application/ports/TransactionManager";
@@ -19,6 +21,7 @@ interface JefeDeps {
     empleadoRepo: EmpleadoRepository;
     saldoRepo: SaldoVacacionesRepository;
     solicitudRepo: SolicitudVacacionesRepository;
+    ausentismoRepo: AusentismoRepository;
     enlaceGenerator: EnlaceRevisionGenerator;
     emailNotifier: EmailNotifier;
     txManager: TransactionManager;
@@ -30,6 +33,7 @@ export function registerJefeRoutes(app: FastifyInstance, deps: JefeDeps): void {
     const listarTodosConVacaciones = new ListarTodosConVacaciones(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo);
     const obtenerArbolMatricial = new ObtenerArbolMatricial(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo);
     const obtenerVacacionesAprobadasEquipo = new ObtenerVacacionesAprobadasEquipo(deps.solicitudRepo, deps.empleadoRepo);
+    const obtenerAusentismosAprobadosEquipo = new ObtenerAusentismosAprobadosEquipo(deps.ausentismoRepo, deps.empleadoRepo);
     const obtenerNotificacionesJefe = new ObtenerNotificacionesJefe(deps.solicitudRepo, deps.empleadoRepo, deps.enlaceGenerator);
     const revocarSolicitud = new RevocarSolicitud(deps.empleadoRepo, deps.solicitudRepo, deps.emailNotifier, deps.txManager);
 
@@ -130,6 +134,24 @@ export function registerJefeRoutes(app: FastifyInstance, deps: JefeDeps): void {
             empleadoId: s.empleadoId,
             empleadoNombre: s.empleadoNombre,
             dias: s.dias.map((d) => d.toISOString().slice(0, 10)),
+        }));
+    });
+
+    // Ausentismos ya aprobados de los subordinados directos del jefe, para mostrarlos en el
+    // mismo calendario que las vacaciones (solo lectura, distinguidos por motivo).
+    app.get('/jefe/ausentismos-equipo', { preHandler: authenticateJefe }, async (request) => {
+        const jefeId = (request.user as { sub: string }).sub;
+        const hoy = new Date();
+        const desde = new Date(Date.UTC(hoy.getUTCFullYear() - 1, hoy.getUTCMonth(), 1));
+        const hasta = new Date(Date.UTC(hoy.getUTCFullYear() + 1, hoy.getUTCMonth() + 1, 0));
+
+        const ausentismos = await obtenerAusentismosAprobadosEquipo.ejecutar({ jefeId, desde, hasta });
+        return ausentismos.map((a) => ({
+            ausentismoId: a.ausentismoId,
+            empleadoId: a.empleadoId,
+            empleadoNombre: a.empleadoNombre,
+            motivo: a.motivo,
+            dias: a.dias.map((d) => d.toISOString().slice(0, 10)),
         }));
     });
 

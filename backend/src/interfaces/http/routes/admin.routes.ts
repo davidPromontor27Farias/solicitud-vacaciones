@@ -22,6 +22,9 @@ import { ImportacionCorreosJefesRepository } from "../../../domain/repositories/
 import { authenticateAdmin } from "../middlewares/authenticateAdmin";
 import { adminLoginSchema, solicitudesPorEstatusQuerySchema, reporteSolicitudesQuerySchema, reportePeriodoQuerySchema, correoJefeParamsSchema, correoJefeBodySchema, crearJefeBodySchema } from "../schemas/admin.schemas";
 import { ValidationError } from "../../../shared/errors";
+import { ListarAusentismosPorEstatus } from "../../../application/use-cases/ListarAusentismosPorEstatus";
+import { AusentismoRepository } from "../../../domain/repositories/AusentismoRepository";
+import { ausentismosPorEstatusQuerySchema } from "../schemas/ausentismos.schemas";
 
 
 
@@ -32,6 +35,7 @@ interface AdminDeps{
     solicitudRepo: SolicitudVacacionesRepository;
     importacionNominaRepo: ImportacionNominaRepository;
     importacionCorreosRepo: ImportacionCorreosJefesRepository;
+    ausentismoRepo: AusentismoRepository;
     passwordHasher: PasswordHasher;
     idGenerator: IdGenerator;
 }
@@ -44,7 +48,8 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminDeps): void
     const eliminarCorreoJefe = new EliminarCorreoJefe(deps.empleadoRepo);
     const crearJefe = new CrearJefe(deps.empleadoRepo);
     const listarSolicitudesPorEstatus = new ListarSolicitudesPorEstatus(deps.solicitudRepo, deps.empleadoRepo);
-    const exportarSaldosSap = new ExportarSaldosSap(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo)
+    const listarAusentismosPorEstatus = new ListarAusentismosPorEstatus(deps.ausentismoRepo, deps.empleadoRepo);
+    const exportarSaldosSap = new ExportarSaldosSap(deps.empleadoRepo, deps.saldoRepo, deps.solicitudRepo);
     const importarReporteVacaciones = new ImportarReporteVacaciones(
         deps.empleadoRepo,
         deps.saldoRepo,
@@ -131,6 +136,22 @@ export function registerAdminRoutes(app: FastifyInstance, deps: AdminDeps): void
             })),
         };
     });
+
+
+    app.get('/admin/nomina/ausentismos', {preHandler: authenticateAdmin}, async (request) => {
+        const query = ausentismosPorEstatusQuerySchema.parse(request.query);
+        const resultado = await listarAusentismosPorEstatus.ejecutar(query);
+        return {
+            ...resultado, 
+            datos: resultado.datos.map((a) => ({
+                ...a,
+                dias: a.dias.map((d) => d.toISOString().slice(0, 10)),
+                createdAt: a.createdAt.toISOString().slice(0,10),
+                resueltoAt: a.resueltoAt ? a.resueltoAt.toISOString().slice(0, 10) : null
+            }))
+        }
+    })
+
 
     app.get('/admin/nomina/reportes/solicitudes', { preHandler: authenticateAdmin }, async (request, reply) => {
         const { estatus, porPagina } = reporteSolicitudesQuerySchema.parse(request.query);

@@ -15,6 +15,7 @@ export async function loginAdmin(usuario: string, password: string): Promise<Adm
 }
 
 export type EstatusSolicitud = 'pendiente' | 'aprobada' | 'rechazada' | 'revocada';
+export type EstatusAusentismo = 'pendiente' | 'aprobado' | 'rechazado';
 
 export interface ActualizarCorreosJefesResultado {
     actualizados: number;
@@ -185,4 +186,26 @@ export async function descargarReporteVacacionesPeriodo(desde: string, hasta: st
     enlace.download = `vacaciones_${desde}_a_${hasta}.xlsx`;
     enlace.click();
     URL.revokeObjectURL(url);
+}
+
+export interface AusentismoPorEstatus {
+    id: string;
+    empleadoId: string;
+    numeroEmpleado: string;
+    nombre: string;
+    departamento: string | null;
+    motivo: string;
+    comentario: string;
+    dias: string[];
+    cantidadDias: number;
+    motivoRechazo: string | null;
+    createdAt: string;
+    resueltoAt: string | null;
+}
+
+export function obtenerAusentismosPorEstatus(
+    estatus: EstatusAusentismo,
+    pagina: number,
+): Promise<ResultadoPaginado<AusentismoPorEstatus>> {
+    return apiFetchAdmin(`/admin/nomina/ausentismos?estatus=${estatus}&pagina=${pagina}`);
 }

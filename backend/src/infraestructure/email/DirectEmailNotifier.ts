@@ -12,13 +12,15 @@ export class DirectEmailNotifier implements EmailNotifier {
         tipo: string;
         destinatario: string;
         solicitudId?: string;
+        ausentismoId?: string;
         datos: Record<string, string>;
     }): Promise<void> {
         const notificacion = await this.prisma.notificacionEmail.create({
             data: {
                 tipo: params.tipo as any,
                 destinatario: params.destinatario,
-                solicitudId: params.solicitudId ?? null
+                solicitudId: params.solicitudId ?? null,
+                ausentismoId: params.ausentismoId ?? null
             }
         });
 

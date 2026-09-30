@@ -6,7 +6,8 @@ import { SeccionReporteVacaciones } from '../components/nominas/SeccionReporteVa
 import { SeccionHistorial } from '../components/nominas/SeccionHistorial';
 import { SeccionSolicitudes } from '../components/nominas/SeccionSolicitudes';
 import { SeccionReportes } from '../components/nominas/SeccionReportes';
-type Seccion = 'correos' | 'vacaciones' | 'historial' | 'solicitudes' | 'reportes';
+import { SeccionAusentismos } from '../components/nominas/SeccionAusentismo';
+type Seccion = 'correos' | 'vacaciones' | 'historial' | 'solicitudes' | 'reportes' | 'ausentismos';
 
 // Mismas rutas que usan los enlaces de navegación en AdminLayout.
 const RUTA_POR_SECCION: Record<string, Seccion> = {
@@ -15,6 +16,7 @@ const RUTA_POR_SECCION: Record<string, Seccion> = {
     '/admin/historial-cargas': 'historial',
     '/admin/nomina-solicitudes': 'solicitudes',
     '/admin/nomina-reportes': 'reportes',
+    '/admin/nomina-ausentismos': 'ausentismos',
 };
 
 
@@ -45,6 +47,7 @@ export function AdminNominasPage() {
             {seccion === 'historial' && <SeccionHistorial />}
             {seccion === 'solicitudes' && <SeccionSolicitudes />}
             {seccion === 'reportes' && <SeccionReportes />}
+            {seccion === 'ausentismos' && <SeccionAusentismos />}
         </div>
     );
 }

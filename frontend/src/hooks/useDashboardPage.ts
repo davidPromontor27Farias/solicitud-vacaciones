@@ -4,7 +4,7 @@ import { obtenerPerfil, type PerfilEmpleado } from '../api/empleados';
 import { ApiError } from '../api/client';
 import { diasFinDeMes } from '../utils/fechas';
 
-export type TabId = 'informacion' | 'nueva' | 'mis';
+export type TabId = 'informacion' | 'nueva' | 'mis' | 'ausentismos';
 
 export const useDashboardPage = () => {
     const [tabActivo, setTabActivoInterno] = useState<TabId>('informacion');

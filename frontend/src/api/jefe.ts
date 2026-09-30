@@ -81,6 +81,20 @@ export function obtenerVacacionesEquipo(): Promise<VacacionAprobadaEquipo[]> {
     return apiFetchJefe('/jefe/vacaciones-equipo');
 }
 
+export interface AusentismoAprobadoEquipo {
+    ausentismoId: string;
+    empleadoId: string;
+    empleadoNombre: string;
+    motivo: string;
+    dias: string[];
+}
+
+// Ausentismos ya aprobados de los subordinados directos del jefe: se muestran en el mismo
+// calendario que las vacaciones, distinguidos visualmente por motivo (sin opcion de revocar).
+export function obtenerAusentismosEquipo(): Promise<AusentismoAprobadoEquipo[]> {
+    return apiFetchJefe('/jefe/ausentismos-equipo');
+}
+
 export interface RevocarVacacionResultado {
     id: string;
     estatus: string;
