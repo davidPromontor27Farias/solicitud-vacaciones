@@ -26,7 +26,7 @@ export function JefeLayout() {
       {/* Fondo de Pantalla */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
-        style={{ backgroundImage: `url('/walppaper.jpg')` }}
+        style={{ backgroundImage: `url('/walppaper.webp')` }}
       />
       <div className="fixed inset-0 bg-black/60 pointer-events-none" />
 

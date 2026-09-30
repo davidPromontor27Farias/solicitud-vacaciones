@@ -25,6 +25,7 @@ export function AdminNominasPage() {
     const { admin } = useAdminAuth();
     const location = useLocation();
     const seccion: Seccion = RUTA_POR_SECCION[location.pathname] ?? 'correos';
+    
 
     return (
         <div className="space-y-6">
@@ -51,3 +52,4 @@ export function AdminNominasPage() {
         </div>
     );
 }
+ 

@@ -13,6 +13,7 @@ export interface DetalleRevisionAusentismoResultado {
     motivo: string;
     comentario: string;
     estatus: string;
+    motivoRechazo: string | null;
     dias: string[];
 }
 
@@ -38,6 +39,7 @@ export class ObtenerDetalleRevisionAusentismo {
             motivo: ausentismo.motivo,
             comentario: ausentismo.comentario,
             estatus: ausentismo.estatus,
+            motivoRechazo: ausentismo.motivoRechazo,
             dias: ausentismo.dias.map((d) => d.toISOString().slice(0, 10)),
         };
     }

@@ -56,7 +56,7 @@ export function RecuperarPasswordPage() {
         <div className="min-h-screen relative flex items-center justify-center bg-gray-50 p-4">
             <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: `url('/walppaper.jpg')` }}
+                style={{ backgroundImage: `url('/walppaper.webp')` }}
             />
             <div className="absolute inset-0 bg-black/50" />
 

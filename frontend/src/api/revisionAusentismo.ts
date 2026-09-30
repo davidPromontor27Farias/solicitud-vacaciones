@@ -6,6 +6,7 @@ export interface DetalleRevisionAusentismo {
     motivo: string;
     comentario: string;
     estatus: string;
+    motivoRechazo: string | null;
     dias: string[];
 }
 

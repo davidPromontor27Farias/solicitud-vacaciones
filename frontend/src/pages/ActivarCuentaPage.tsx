@@ -31,7 +31,7 @@ export const  ActivarCuentaPage = () => {
             <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                 style={{
-                    backgroundImage: `url('/walppaper.jpg')`, // Reemplaza 'tu-imagen.jpg' con el nombre de tu archivo
+                    backgroundImage: `url('/walppaper.webp')`, // Reemplaza 'tu-imagen.jpg' con el nombre de tu archivo
                 }}
             />
 

@@ -30,7 +30,7 @@ export function RevisarSolicitudPage() {
             <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                 style={{
-                    backgroundImage: `url('/walppaper.jpg')`,
+                    backgroundImage: `url('/walppaper.webp')`,
                 }}
             />
 
