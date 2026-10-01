@@ -50,6 +50,7 @@ export function registerRevisionRoutes(app: FastifyInstance, deps: RevisionDeps)
             solicitudId: payload.solicitudId,
             aprobadorId: payload.jefeId,
             backupSeleccionado: body.backupSeleccionado,
+            diasAprobados: body.diasAprobados?.map((iso) => new Date(`${iso}T00:00:00.000Z`)),
         });
 
         return { id: solicitud.id, estatus: solicitud.estatus };

@@ -6,6 +6,7 @@ export const crearSolicitudSchema = z.object({
 
 export const aprobarSolicitudSchema = z.object({
     backupSeleccionado: z.string().min(1).max(150).optional(),
+    diasAprobados: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido')).optional(),
 });
 
 export const revocarSolicitudSchema = z.object({

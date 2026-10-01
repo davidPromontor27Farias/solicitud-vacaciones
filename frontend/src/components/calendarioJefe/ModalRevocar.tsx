@@ -16,7 +16,7 @@ export const ModalRevocar = ({
     onRevocado: () => void;
 }) => {
     const diasOrdenados = useMemo(() => [...vacacion.dias].sort(), [vacacion.dias]);
-    const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set(diasOrdenados));
+    const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set());
     const [motivo, setMotivo] = useState('');
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState<string | null>(null);

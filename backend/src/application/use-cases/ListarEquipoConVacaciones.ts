@@ -40,10 +40,11 @@ export class ListarEquipoConVacaciones {
         // Se trae el saldo y las solicitudes aprobadas de todo el equipo en 2 consultas (no una
         // por empleado): con equipos grandes, N consultas secuenciales hacian que la pantalla
         // tardara decenas de segundos en cargar.
-        const [todosSaldos, todasAprobadas, todasRechazadas] = await Promise.all([
+        const [todosSaldos, todasAprobadas, todasRechazadas, diasRechazadosParciales] = await Promise.all([
             this.saldoRepo.listarPorEmpleadoIds(empleadoIds),
             this.solicitudRepo.listarAprobadasPorEmpleados(empleadoIds),
             this.solicitudRepo.listarRechazadasPorEmpleados(empleadoIds),
+            this.solicitudRepo.contarDiasRechazadosPorEmpleados(empleadoIds),
         ]);
 
         const saldosPorEmpleadoId = new Map<string, typeof todosSaldos>();
@@ -59,14 +60,17 @@ export class ListarEquipoConVacaciones {
             aprobadasPorEmpleadoId.set(solicitud.empleadoId, lista);
         }
 
-        // Una solicitud rechazada se rechaza completa (no hay rechazo parcial de dias, a
-        // diferencia de la revocacion), asi que todos sus dias cuentan.
+        // Dias rechazados = dias de solicitudes rechazadas por completo (al pendiente) +
+        // dias individuales rechazados al aprobar solo una parte de una solicitud.
         const diasRechazadosPorEmpleadoId = new Map<string, number>();
         for (const solicitud of todasRechazadas) {
             diasRechazadosPorEmpleadoId.set(
                 solicitud.empleadoId,
                 (diasRechazadosPorEmpleadoId.get(solicitud.empleadoId) ?? 0) + solicitud.cantidadDias,
             );
+        }
+        for (const [empleadoId, cantidad] of diasRechazadosParciales) {
+            diasRechazadosPorEmpleadoId.set(empleadoId, (diasRechazadosPorEmpleadoId.get(empleadoId) ?? 0) + cantidad);
         }
 
         const resultado: EmpleadoEquipoResultado[] = [];

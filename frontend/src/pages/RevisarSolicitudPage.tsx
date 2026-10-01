@@ -18,9 +18,9 @@ export function RevisarSolicitudPage() {
         detalle, cargando, error, setError, enviando, mensaje,
         mesActual, setMesActual,
         motivoRechazo, setMotivoRechazo, mostrandoRechazo, setMostrandoRechazo,
-        mostrandoAprobar, setMostrandoAprobar,
         motivoDeclinar, setMotivoDeclinar, mostrandoDeclinar, setMostrandoDeclinar,
         backupSeleccionado, setBackupSeleccionado,
+        diasAprobados, alternarDiaAprobado,
         manejarAprobar, manejarRechazar, manejarDeclinar,
     } = useRevisarSolicitudPage();
 
@@ -46,6 +46,7 @@ export function RevisarSolicitudPage() {
 
                     {detalle && mesActual && (() => {
                     const finDeMes = diasFinDeMes(detalle.dias);
+                    const puedeAprobar = detalle.estatus === 'pendiente' && !detalle.vencida && detalle.esJefeDirecto;
                     return (
                     <div className="space-y-4">
                         <div>
@@ -72,6 +73,7 @@ export function RevisarSolicitudPage() {
                             diasEnColision={new Set(Object.keys(detalle.colisiones))}
                             diasEquipoAprobados={detalle.diasEquipoAprobados}
                             diasEquipoPendientes={detalle.diasEquipoPendientes}
+                            {...(puedeAprobar ? { diasAprobados, onToggleDia: alternarDiaAprobado } : {})}
                         />
 
                         {Object.keys(detalle.colisiones).length > 0 && (
@@ -101,10 +103,10 @@ export function RevisarSolicitudPage() {
                             </div>
                         )}
 
-                        {detalle.estatus === 'pendiente' && !detalle.vencida && detalle.esJefeDirecto && (
+                        {puedeAprobar && (
                             <AccionesAprobacion
-                                mostrandoAprobar={mostrandoAprobar}
-                                setMostrandoAprobar={setMostrandoAprobar}
+                                dias={detalle.dias}
+                                diasAprobados={diasAprobados}
                                 mostrandoRechazo={mostrandoRechazo}
                                 setMostrandoRechazo={setMostrandoRechazo}
                                 motivoRechazo={motivoRechazo}

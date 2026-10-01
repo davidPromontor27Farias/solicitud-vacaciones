@@ -171,6 +171,25 @@ function construirContenido(tipo: string, datos: Record<string, string>): Omit<C
             };
         }
 
+        case 'aprobacion_parcial_empleado': {
+            const diasAprobados = datos.diasAprobados ?? '';
+            const diasNoAprobados = datos.diasNoAprobados ?? '';
+            const backup = datos.backup ?? '';
+            return {
+                subject: 'Tu solicitud de vacaciones fue aprobada parcialmente',
+                text: `Se aprobaron tus días: ${diasAprobados}. No se aprobaron: ${diasNoAprobados}.`,
+                html: envolverPlantilla(`
+                    <p style="margin:0 0 16px;">Tu jefe revisó tu solicitud de vacaciones y aprobó <strong style="color:#059669;">parte de los días</strong> que pediste.</p>
+                    ${tabla(
+                        filaTabla('Días aprobados', escaparHtml(diasAprobados)) +
+                        filaTabla('Días no aprobados', escaparHtml(diasNoAprobados)) +
+                        filaTabla('Backup asignado', escaparHtml(backup))
+                    )}
+                    <p style="margin:0;color:#6b7280;font-size:13px;">Si tienes dudas sobre por qué no se aprobaron todos los días, contacta directamente a tu jefe.</p>
+                `),
+            };
+        }
+
         case 'solicitud_rechazada': {
             const dias = datos.dias ?? '';
             const motivo = datos.motivo ?? '';

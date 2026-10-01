@@ -8,6 +8,7 @@ export interface SolicitudVacacionesProps{
     estatus: EstatusSolicitud;
     dias: Date[];
     diasRevocados?: Date[];
+    diasRechazados?: Date[];
     backupNombre?: string | null;
     motivoRevocacion?: string | null;
     motivoRechazo?: string | null;
@@ -28,12 +29,16 @@ export class SolicitudVacaciones {
     get estatus() {return this.props.estatus;}
     get dias() {return [...this.props.dias];}
     get diasRevocados() {return [...(this.props.diasRevocados ?? [])];}
-    // Dias de la solicitud que siguen aprobados (no han sido revocados). En una solicitud
-    // nunca revocada, es igual a `dias`; tras una revocacion parcial, es el subconjunto
-    // restante que aun cuenta como disfrutado/programado y que se puede volver a revocar.
+    // Dias que nunca llegaron a aprobarse (aprobacion parcial): a diferencia de
+    // diasRevocados, estos no cuentan ni contaron nunca como aprobados/programados.
+    get diasRechazados() {return [...(this.props.diasRechazados ?? [])];}
+    // Dias de la solicitud que siguen aprobados (ni revocados ni rechazados al aprobar).
     get diasActivos() {
         const revocados = this.props.diasRevocados ?? [];
-        return this.props.dias.filter((dia) => !revocados.some((r) => mismoDia(r, dia)));
+        const rechazados = this.props.diasRechazados ?? [];
+        return this.props.dias.filter((dia) =>
+            !revocados.some((r) => mismoDia(r, dia)) && !rechazados.some((r) => mismoDia(r, dia)),
+        );
     }
     get cantidadDias() {return this.props.dias.length;}
     get backupNombre() {return this.props.backupNombre ?? null}
@@ -61,6 +66,22 @@ export class SolicitudVacaciones {
 
         this.props.estatus = 'aprobada';
         this.props.resueltoAt = new Date();
+    }
+
+    // Marca como rechazados (nunca aprobados) algunos dias de una solicitud que se aprueba
+    // parcialmente. Solo aplica en el momento de aprobar, por eso exige estatus "aprobada".
+    marcarDiasRechazados(dias: Date[]): void {
+        if (this.props.estatus !== 'aprobada') {
+            throw new Error('Solo se pueden marcar días no aprobados al aprobar la solicitud');
+        }
+        if (dias.length === 0) return;
+
+        const invalido = dias.find((dia) => !this.props.dias.some((d) => mismoDia(d, dia)));
+        if (invalido) {
+            throw new Error('Alguno de los días no pertenece a esta solicitud');
+        }
+
+        this.props.diasRechazados = [...(this.props.diasRechazados ?? []), ...dias];
     }
 
     seleccionarBackup(nombre: string): void {
@@ -127,6 +148,11 @@ export class SolicitudVacaciones {
     }
 
     toProps(): SolicitudVacacionesProps{
-        return {...this.props, dias: [...this.props.dias], diasRevocados: [...(this.props.diasRevocados ?? [])]};
+        return {
+            ...this.props,
+            dias: [...this.props.dias],
+            diasRevocados: [...(this.props.diasRevocados ?? [])],
+            diasRechazados: [...(this.props.diasRechazados ?? [])],
+        };
     }
 }

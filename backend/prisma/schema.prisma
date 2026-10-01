@@ -42,6 +42,7 @@ enum TipoNotificacion {
   solicitud_creada
   solicitud_rechazada
   aprobacion_empleado
+  aprobacion_parcial_empleado
   aprobacion_nomina
   aprobacion_jefe_matricial
   revocacion
@@ -152,6 +153,9 @@ model DiaSolicitado {
   // Permite revocar solo una parte de los dias de una solicitud aprobada (ej. de 5 dias
   // solicitados, revocar solo los 2 que aun no ocurren). Null = el dia sigue vigente.
   revocadoAt  DateTime?           @map("revocado_at")
+  // Dias que nunca se aprobaron (aprobacion parcial): distinto de revocadoAt, que es para
+  // dias que si se aprobaron y despues se les quito la aprobacion.
+  rechazadoAt DateTime?           @map("rechazado_at")
 
   @@unique([solicitudId, fecha])
   @@index([fecha])

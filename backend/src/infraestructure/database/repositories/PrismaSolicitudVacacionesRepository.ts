@@ -14,7 +14,7 @@ type SolicitudConDias = {
     revocadoPorId: string | null;
     createdAt: Date;
     resueltoAt: Date | null;
-    diasSolicitados: {fecha: Date; revocadoAt: Date | null}[];
+    diasSolicitados: {fecha: Date; revocadoAt: Date | null; rechazadoAt: Date | null}[];
 }
 
 function toDomain(row: SolicitudConDias): SolicitudVacaciones{
@@ -24,6 +24,7 @@ function toDomain(row: SolicitudConDias): SolicitudVacaciones{
         estatus: row.estatus,
         dias: row.diasSolicitados.map(d => d.fecha),
         diasRevocados: row.diasSolicitados.filter(d => d.revocadoAt !== null).map(d => d.fecha),
+        diasRechazados: row.diasSolicitados.filter(d => d.rechazadoAt !== null).map(d => d.fecha),
         backupNombre: row.backupNombre,
         motivoRevocacion: row.motivoRevocacion,
         motivoRechazo: row.motivoRechazo,
@@ -196,6 +197,14 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
         });
     }
 
+    async marcarDiasRechazados(solicitudId: string, dias: Date[], tx?: unknown): Promise<void> {
+        const cliente = (tx as PrismaClient) ?? this.prisma;
+        await cliente.diaSolicitado.updateMany({
+            where: { solicitudId, fecha: { in: dias } },
+            data: { rechazadoAt: new Date() },
+        });
+    }
+
     async listarPorEstatus(filtro: FiltroPorEstatus): Promise<ResultadoPaginado<SolicitudVacaciones>> {
         const skip = (filtro.pagina - 1) * filtro.porPagina;
         const [rows, total] = await Promise.all([
@@ -224,5 +233,32 @@ export class PrismaSolicitudVacacionesRepository implements SolicitudVacacionesR
                 solicitud: { empleadoId, revocadoPorId: jefeId },
             },
         });
+    }
+
+    async contarDiasRechazadosPorEmpleados(empleadoIds: string[]): Promise<Map<string, number>> {
+        if (empleadoIds.length === 0) return new Map();
+        const rows = await this.prisma.diaSolicitado.findMany({
+            where: { rechazadoAt: { not: null }, solicitud: { empleadoId: { in: empleadoIds } } },
+            select: { solicitud: { select: { empleadoId: true } } },
+        });
+        const mapa = new Map<string, number>();
+        for (const row of rows) {
+            const id = row.solicitud.empleadoId;
+            mapa.set(id, (mapa.get(id) ?? 0) + 1);
+        }
+        return mapa;
+    }
+
+    async contarDiasRechazadosTodos(): Promise<Map<string, number>> {
+        const rows = await this.prisma.diaSolicitado.findMany({
+            where: { rechazadoAt: { not: null } },
+            select: { solicitud: { select: { empleadoId: true } } },
+        });
+        const mapa = new Map<string, number>();
+        for (const row of rows) {
+            const id = row.solicitud.empleadoId;
+            mapa.set(id, (mapa.get(id) ?? 0) + 1);
+        }
+        return mapa;
     }
 }

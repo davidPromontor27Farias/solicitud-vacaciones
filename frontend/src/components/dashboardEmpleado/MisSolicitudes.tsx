@@ -111,7 +111,7 @@ export const MisSolicitudes = ({
                     </div>
                   )}
 
-                  {/* Bloque de días revocados (si aplica) */}
+                  {/* Bloque de días revocados (si aplica): dias que si se aprobaron y luego se quitaron */}
                   {s.estatus !== 'revocada' && s.diasRevocados.length > 0 && (
                     <div className="bg-rose-50/70 border border-rose-100 p-2 rounded-lg text-xs text-gray-600 space-y-0.5">
                       <p className="font-semibold text-rose-700">
@@ -119,6 +119,18 @@ export const MisSolicitudes = ({
                       </p>
                       <p className="text-gray-600 font-medium">
                         {formatearDiasComoRangos(s.diasRevocados)}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Bloque de días no aprobados (si aplica): aprobacion parcial, nunca se aprobaron */}
+                  {s.diasRechazados.length > 0 && (
+                    <div className="bg-orange-50/70 border border-orange-100 p-2 rounded-lg text-xs text-gray-600 space-y-0.5">
+                      <p className="font-semibold text-orange-700">
+                        {s.diasRechazados.length} día{s.diasRechazados.length !== 1 ? 's' : ''} no aprobado{s.diasRechazados.length !== 1 ? 's' : ''} por tu jefe:
+                      </p>
+                      <p className="text-gray-600 font-medium">
+                        {formatearDiasComoRangos(s.diasRechazados)}
                       </p>
                     </div>
                   )}

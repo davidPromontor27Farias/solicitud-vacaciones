@@ -6,6 +6,7 @@ export type TipoNotificacion =
     | 'solicitud_creada'
     | 'solicitud_rechazada'
     | 'aprobacion_empleado'
+    | 'aprobacion_parcial_empleado'
     | 'aprobacion_nomina'
     | 'aprobacion_jefe_matricial'
     | 'revocacion'

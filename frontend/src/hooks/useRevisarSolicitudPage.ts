@@ -14,10 +14,10 @@ export const useRevisarSolicitudPage = () => {
     const [mesActual, setMesActual] = useState<Date | null>(null);
     const [motivoRechazo, setMotivoRechazo] = useState('');
     const [mostrandoRechazo, setMostrandoRechazo] = useState(false);
-    const [mostrandoAprobar, setMostrandoAprobar] = useState(false);
     const [motivoDeclinar, setMotivoDeclinar] = useState('');
     const [mostrandoDeclinar, setMostrandoDeclinar] = useState(false);
     const [backupSeleccionado, setBackupSeleccionado] = useState('');
+    const [diasAprobados, setDiasAprobados] = useState<string[]>([]);
 
     const cargar = async () => {
         if (!token) return;
@@ -26,6 +26,7 @@ export const useRevisarSolicitudPage = () => {
         try {
             const resultado = await obtenerDetalleRevision(token);
             setDetalle(resultado);
+            setDiasAprobados(resultado.dias); // por default, todos marcados = aprobacion completa
             const primerDia = new Date(`${resultado.dias[0]}T00:00:00.000Z`);
             setMesActual(new Date(Date.UTC(primerDia.getUTCFullYear(), primerDia.getUTCMonth(), 1)));
         } catch (err) {
@@ -47,10 +48,18 @@ export const useRevisarSolicitudPage = () => {
             setError('Selecciona quién cubrirá al empleado');
             return;
         }
+        if (diasAprobados.length === 0) {
+            setError('Selecciona al menos un día, o usa "Rechazar" si no quieres aprobar ninguno');
+            return;
+        }
         setEnviando(true);
         setError(null);
         try {
-            await aprobarPorEnlace(token, opcionesBackup.length > 1 ? backupSeleccionado : undefined);
+            await aprobarPorEnlace(
+                token,
+                opcionesBackup.length > 1 ? backupSeleccionado : undefined,
+                detalle && diasAprobados.length < detalle.dias.length ? diasAprobados : undefined,
+            );
             setMensaje('Solicitud aprobada correctamente.');
             await cargar();
         } catch (err) {
@@ -58,6 +67,12 @@ export const useRevisarSolicitudPage = () => {
         } finally {
             setEnviando(false);
         }
+    };
+
+    const alternarDiaAprobado = (dia: string) => {
+        setDiasAprobados((prev) =>
+            prev.includes(dia) ? prev.filter((d) => d !== dia) : [...prev, dia],
+        );
     };
 
     const manejarRechazar = async () => {
@@ -102,9 +117,9 @@ export const useRevisarSolicitudPage = () => {
         detalle, cargando, error, setError, enviando, mensaje,
         mesActual, setMesActual,
         motivoRechazo, setMotivoRechazo, mostrandoRechazo, setMostrandoRechazo,
-        mostrandoAprobar, setMostrandoAprobar,
         motivoDeclinar, setMotivoDeclinar, mostrandoDeclinar, setMostrandoDeclinar,
         backupSeleccionado, setBackupSeleccionado,
+        diasAprobados, alternarDiaAprobado,
         manejarAprobar, manejarRechazar, manejarDeclinar,
     };
 };

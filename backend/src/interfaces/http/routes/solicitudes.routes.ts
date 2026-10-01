@@ -68,6 +68,7 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
         solicitudId: id,
         aprobadorId,
         backupSeleccionado: body.backupSeleccionado,
+        diasAprobados: body.diasAprobados?.map((iso) => new Date(`${iso}T00:00:00.000Z`)),
     });
 
         reply.send({ id: solicitud.id, estatus: solicitud.estatus, backupNombre: solicitud.backupNombre });
@@ -117,6 +118,7 @@ export function registerSolicitudesRoutes(app: FastifyInstance, deps: Solicitude
             estatus: s.estatus,
             dias: s.dias.map((d) => d.toISOString().slice(0, 10)),
             diasRevocados: s.diasRevocados.map((d) => d.toISOString().slice(0, 10)),
+            diasRechazados: s.diasRechazados.map((d) => d.toISOString().slice(0, 10)),
             vencida: s.estaVencida(),
             backupNombre: s.backupNombre,
         })),

@@ -7,6 +7,10 @@ interface CalendarioColisionesProps {
     diasEnColision: Set<string>;
     diasEquipoAprobados: Record<string, string[]>;
     diasEquipoPendientes: Record<string, string[]>;
+    // Modo aprobacion parcial: si se pasan, los dias solicitados se vuelven clicables para
+    // marcar/desmarcar cuales se aprueban. Sin estos props, el calendario es solo de lectura.
+    diasAprobados?: string[];
+    onToggleDia?: (dia: string) => void;
 }
 
 export const DIAS_SEMANA = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
@@ -30,8 +34,16 @@ function estiloCelda(params: {
     enColision: boolean;
     aprobadoEquipo: boolean;
     pendienteEquipo: boolean;
+    seleccionable: boolean;
+    desmarcado: boolean;
 }): { className: string; style?: CSSProperties } {
-    const { solicitado, enColision, aprobadoEquipo, pendienteEquipo } = params;
+    const { solicitado, enColision, aprobadoEquipo, pendienteEquipo, seleccionable, desmarcado } = params;
+
+    // Dia solicitado que el jefe desmarco para no aprobar: se ve "apagado", sin importar si
+    // choca con algo (ya no tiene caso resaltar una colision de un dia que no se va a aprobar).
+    if (solicitado && seleccionable && desmarcado) {
+        return { className: 'bg-gray-100 text-gray-400 font-medium ring-1 ring-gray-300 line-through decoration-2' };
+    }
 
     if (enColision) {
         return {
@@ -70,9 +82,13 @@ export function CalendarioColisiones({
     diasEnColision,
     diasEquipoAprobados,
     diasEquipoPendientes,
+    diasAprobados,
+    onToggleDia,
 }: CalendarioColisionesProps) {
     const diasEquiposAprobadosSet = new Set(Object.keys(diasEquipoAprobados));
     const diasEquipoPendientesSet = new Set(Object.keys(diasEquipoPendientes));
+    const seleccionable = diasAprobados !== undefined && onToggleDia !== undefined;
+    const diasAprobadosSet = new Set(diasAprobados ?? []);
 
     const diasEnMes = new Date(Date.UTC(mesActual.getUTCFullYear(), mesActual.getUTCMonth() + 1, 0)).getUTCDate();
     const offsetInicio = mesActual.getUTCDay();
@@ -111,19 +127,37 @@ export function CalendarioColisiones({
                 {celdas.map((fecha, i) => {
                     if (!fecha) return <div key={i} />;
                     const clave = formatearFecha(fecha);
+                    const esSolicitado = diasSolicitados.includes(clave);
+                    const esClicable = seleccionable && esSolicitado;
+                    const desmarcado = esClicable && !diasAprobadosSet.has(clave);
                     const { className, style } = estiloCelda({
-                        solicitado: diasSolicitados.includes(clave),
+                        solicitado: esSolicitado,
                         enColision: diasEnColision.has(clave),
                         aprobadoEquipo: diasEquiposAprobadosSet.has(clave),
                         pendienteEquipo: diasEquipoPendientesSet.has(clave),
+                        seleccionable,
+                        desmarcado,
                     });
 
+                    const claseBase = ['aspect-square rounded-md text-sm flex items-center justify-center', className].join(' ');
+
+                    if (esClicable) {
+                        return (
+                            <button
+                                key={i}
+                                type="button"
+                                onClick={() => onToggleDia!(clave)}
+                                title={desmarcado ? 'Tocar para aprobar este día' : 'Tocar para no aprobar este día'}
+                                className={[claseBase, 'cursor-pointer hover:brightness-110 active:scale-95 transition-transform'].join(' ')}
+                                style={style}
+                            >
+                                {fecha.getUTCDate()}
+                            </button>
+                        );
+                    }
+
                     return (
-                        <div
-                            key={i}
-                            className={['aspect-square rounded-md text-sm flex items-center justify-center', className].join(' ')}
-                            style={style}
-                        >
+                        <div key={i} className={claseBase} style={style}>
                             {fecha.getUTCDate()}
                         </div>
                     );
@@ -135,6 +169,9 @@ export function CalendarioColisiones({
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm ring-1 ring-blue-400 inline-block" style={{ background: `linear-gradient(135deg, ${COLOR_SOLICITADO} 50%, ${COLOR_PENDIENTE_SOLIDO} 50%)` }} /> Cruza con pendiente</span>
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-amber-100 inline-block" /> Aprobado</span>
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-blue-100 inline-block" /> Pendiente</span>
+                {seleccionable && (
+                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-gray-100 ring-1 ring-gray-300 inline-block" /> No aprobado</span>
+                )}
             </div>
         </div>
     );
